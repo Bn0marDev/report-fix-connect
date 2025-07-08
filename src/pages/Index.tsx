@@ -195,7 +195,7 @@ const Index = () => {
             </Card>
           </div>
         </section>
-      </div>
+      </section>
 
       {/* Footer */}
       <footer className="bg-gray-900 text-white mt-16">
