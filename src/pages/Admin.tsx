@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { BarChart3, ArrowRight, Search, Filter, Eye, Edit, CheckCircle, Clock, AlertTriangle, MapPin, Calendar, Phone, User } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -12,7 +13,7 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import InteractiveMap from '@/components/InteractiveMap';
 
-interface Report {
+interface AdminReport {
   id: string;
   reporter_name: string;
   reporter_phone: string;
@@ -31,14 +32,24 @@ interface Report {
   updated_at: string;
 }
 
+interface MapReport {
+  id: string;
+  location_lat: number;
+  location_lng: number;
+  type: string;
+  status: string;
+  description: string;
+  created_at: string;
+}
+
 const Admin = () => {
   const { toast } = useToast();
-  const [reports, setReports] = useState<Report[]>([]);
-  const [filteredReports, setFilteredReports] = useState<Report[]>([]);
+  const [reports, setReports] = useState<AdminReport[]>([]);
+  const [filteredReports, setFilteredReports] = useState<AdminReport[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [priorityFilter, setPriorityFilter] = useState('all');
-  const [selectedReport, setSelectedReport] = useState<Report | null>(null);
+  const [selectedReport, setSelectedReport] = useState<AdminReport | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [loginForm, setLoginForm] = useState({ username: '', password: '' });
   const [loading, setLoading] = useState(true);
@@ -185,9 +196,24 @@ const Admin = () => {
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return {
-      date: date.toLocaleDateString('en-US'),
-      time: date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
+      date: date.toLocaleDateString('ar-SA', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit'
+      }),
+      time: date.toLocaleTimeString('ar-SA', { 
+        hour: '2-digit', 
+        minute: '2-digit',
+        hour12: true
+      })
     };
+  };
+
+  const handleMapReportClick = (report: MapReport) => {
+    const adminReport = reports.find(r => r.id === report.id);
+    if (adminReport) {
+      setSelectedReport(adminReport);
+    }
   };
 
   // Login screen
@@ -259,7 +285,17 @@ const Admin = () => {
     completed: reports.filter(r => r.status === 'completed').length
   };
 
-  const reportsWithLocation = reports.filter(r => r.location_lat && r.location_lng);
+  const mapReports: MapReport[] = reports
+    .filter(r => r.location_lat && r.location_lng)
+    .map(r => ({
+      id: r.id,
+      location_lat: r.location_lat!,
+      location_lng: r.location_lng!,
+      type: r.type,
+      status: r.status,
+      description: r.description,
+      created_at: r.created_at
+    }));
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50">
@@ -576,8 +612,8 @@ const Admin = () => {
               <CardContent>
                 <div className="border rounded-lg overflow-hidden">
                   <InteractiveMap
-                    reports={reportsWithLocation}
-                    onReportClick={setSelectedReport}
+                    reports={mapReports}
+                    onReportClick={handleMapReportClick}
                     height="500px"
                   />
                 </div>
