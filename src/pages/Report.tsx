@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Link } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import InteractiveMap from '@/components/InteractiveMap';
 
 const Report = () => {
   const { toast } = useToast();
@@ -25,7 +26,6 @@ const Report = () => {
     location: null as { lat: number; lng: number } | null
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [currentLocation, setCurrentLocation] = useState<{ lat: number; lng: number } | null>(null);
 
   const reportTypes = [
     'حفرة في الطريق',
@@ -50,7 +50,7 @@ const Report = () => {
       const newFiles = Array.from(files);
       setFormData(prev => ({
         ...prev,
-        images: [...prev.images, ...newFiles].slice(0, 5) // Max 5 images
+        images: [...prev.images, ...newFiles].slice(0, 5)
       }));
     }
   };
@@ -70,7 +70,6 @@ const Report = () => {
             lat: position.coords.latitude,
             lng: position.coords.longitude
           };
-          setCurrentLocation(location);
           setFormData(prev => ({
             ...prev,
             location
@@ -102,10 +101,20 @@ const Report = () => {
     }
   };
 
+  const handleLocationSelect = (lat: number, lng: number) => {
+    setFormData(prev => ({
+      ...prev,
+      location: { lat, lng }
+    }));
+    toast({
+      title: "تم تحديد الموقع",
+      description: "تم تحديد موقع المشكلة على الخريطة",
+    });
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Validation
     if (!formData.name || !formData.phone || !formData.reportType || !formData.description) {
       toast({
         title: "معلومات ناقصة",
@@ -127,7 +136,6 @@ const Report = () => {
     setIsSubmitting(true);
 
     try {
-      // إعداد البيانات للإرسال
       const reportData = {
         reporter_name: formData.name,
         reporter_phone: formData.phone,
@@ -139,7 +147,7 @@ const Report = () => {
         location_lng: formData.location.lng,
         status: 'pending',
         priority: 'medium',
-        images: [] // سيتم تحديث هذا لاحقاً لرفع الصور
+        images: []
       };
 
       const { data, error } = await supabase
@@ -156,7 +164,6 @@ const Report = () => {
         description: "شكراً لك على المساهمة في تحسين الطرق",
       });
 
-      // Reset form
       setFormData({
         name: '',
         phone: '',
@@ -167,7 +174,6 @@ const Report = () => {
         images: [],
         location: null
       });
-      setCurrentLocation(null);
       
     } catch (error) {
       console.error('Error submitting report:', error);
@@ -189,25 +195,25 @@ const Report = () => {
           <div className="flex items-center justify-between">
             <Link to="/" className="flex items-center space-x-3 rtl:space-x-reverse text-blue-600 hover:text-blue-800 transition-colors">
               <ArrowRight className="h-5 w-5" />
-              <span className="arabic-text">العودة للرئيسية</span>
+              <span className="arabic-text hidden sm:inline">العودة للرئيسية</span>
             </Link>
             
             <div className="flex items-center space-x-3 rtl:space-x-reverse">
               <div className="bg-gradient-to-br from-blue-500 to-green-500 p-2 rounded-xl">
-                <MapPin className="h-6 w-6 text-white" />
+                <MapPin className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
               </div>
               <div className="arabic-text">
-                <h1 className="text-xl font-bold text-gray-900">إبلاغ جديد</h1>
+                <h1 className="text-lg sm:text-xl font-bold text-gray-900">إبلاغ جديد</h1>
               </div>
             </div>
           </div>
         </div>
       </header>
 
-      <div className="container mx-auto px-4 py-8">
-        <div className="max-w-4xl mx-auto">
-          {/* Progress Steps */}
-          <div className="mb-8">
+      <div className="container mx-auto px-4 py-6 sm:py-8">
+        <div className="max-w-6xl mx-auto">
+          {/* Progress Steps - Hidden on mobile */}
+          <div className="mb-6 sm:mb-8 hidden sm:block">
             <div className="flex items-center justify-center space-x-4 rtl:space-x-reverse">
               <div className="flex items-center">
                 <div className="bg-blue-500 text-white rounded-full w-8 h-8 flex items-center justify-center text-sm font-medium">
@@ -232,14 +238,14 @@ const Report = () => {
             </div>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-8">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <form onSubmit={handleSubmit} className="space-y-6 sm:space-y-8">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8">
               {/* Left Column - Form Fields */}
-              <div className="space-y-6">
+              <div className="space-y-4 sm:space-y-6">
                 {/* Personal Information */}
                 <Card>
-                  <CardHeader>
-                    <CardTitle className="arabic-text">معلومات المبلغ</CardTitle>
+                  <CardHeader className="pb-4">
+                    <CardTitle className="arabic-text text-lg">معلومات المبلغ</CardTitle>
                     <CardDescription className="arabic-text">
                       معلوماتك الشخصية للتواصل معك عند الحاجة
                     </CardDescription>
@@ -275,8 +281,8 @@ const Report = () => {
 
                 {/* Report Details */}
                 <Card>
-                  <CardHeader>
-                    <CardTitle className="arabic-text">تفاصيل البلاغ</CardTitle>
+                  <CardHeader className="pb-4">
+                    <CardTitle className="arabic-text text-lg">تفاصيل البلاغ</CardTitle>
                     <CardDescription className="arabic-text">
                       وصف دقيق للمشكلة المراد الإبلاغ عنها
                     </CardDescription>
@@ -319,7 +325,7 @@ const Report = () => {
                         placeholder="اكتب وصفاً مفصلاً للمشكلة..."
                         value={formData.description}
                         onChange={(e) => handleInputChange('description', e.target.value)}
-                        className="min-h-[100px] arabic-text"
+                        className="min-h-[80px] sm:min-h-[100px] arabic-text"
                         required
                       />
                     </div>
@@ -331,16 +337,16 @@ const Report = () => {
                         placeholder="مثال: شارع الملك فهد، بجانب مسجد النور، بعد إشارة المرور الأولى..."
                         value={formData.streetDescription}
                         onChange={(e) => handleInputChange('streetDescription', e.target.value)}
-                        className="min-h-[80px] arabic-text"
+                        className="min-h-[60px] sm:min-h-[80px] arabic-text"
                       />
                     </div>
                   </CardContent>
                 </Card>
 
-                {/* Images Upload */}
+                {/* Images Upload - Compact on mobile */}
                 <Card>
-                  <CardHeader>
-                    <CardTitle className="arabic-text">الصور المرفقة</CardTitle>
+                  <CardHeader className="pb-4">
+                    <CardTitle className="arabic-text text-lg">الصور المرفقة</CardTitle>
                     <CardDescription className="arabic-text">
                       أرفق حتى 5 صور توضح المشكلة (اختياري)
                     </CardDescription>
@@ -348,11 +354,11 @@ const Report = () => {
                   <CardContent>
                     <div className="space-y-4">
                       <div className="flex items-center justify-center w-full">
-                        <label htmlFor="dropzone-file" className="flex flex-col items-center justify-center w-full h-32 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100">
-                          <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                            <Upload className="w-8 h-8 mb-4 text-gray-500" />
-                            <p className="mb-2 text-sm text-gray-500 arabic-text">
-                              <span className="font-semibold">انقر لرفع الصور</span> أو اسحب الملفات هنا
+                        <label htmlFor="dropzone-file" className="flex flex-col items-center justify-center w-full h-24 sm:h-32 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100">
+                          <div className="flex flex-col items-center justify-center pt-3 pb-3 sm:pt-5 sm:pb-6">
+                            <Upload className="w-6 h-6 sm:w-8 sm:h-8 mb-2 sm:mb-4 text-gray-500" />
+                            <p className="mb-1 sm:mb-2 text-xs sm:text-sm text-gray-500 arabic-text text-center">
+                              <span className="font-semibold">انقر لرفع الصور</span>
                             </p>
                             <p className="text-xs text-gray-500 arabic-text">PNG, JPG حتى 10MB</p>
                           </div>
@@ -369,18 +375,18 @@ const Report = () => {
                       </div>
                       
                       {formData.images.length > 0 && (
-                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                        <div className="grid grid-cols-3 sm:grid-cols-3 gap-2 sm:gap-4">
                           {formData.images.map((file, index) => (
                             <div key={index} className="relative">
                               <img
                                 src={URL.createObjectURL(file)}
                                 alt={`صورة ${index + 1}`}
-                                className="w-full h-20 object-cover rounded-lg"
+                                className="w-full h-16 sm:h-20 object-cover rounded-lg"
                               />
                               <button
                                 type="button"
                                 onClick={() => removeImage(index)}
-                                className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 text-sm hover:bg-red-600 transition-colors"
+                                className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-5 h-5 sm:w-6 sm:h-6 text-xs hover:bg-red-600 transition-colors"
                               >
                                 ×
                               </button>
@@ -394,10 +400,10 @@ const Report = () => {
               </div>
 
               {/* Right Column - Location */}
-              <div className="space-y-6">
+              <div className="space-y-4 sm:space-y-6">
                 <Card className="h-fit">
-                  <CardHeader>
-                    <CardTitle className="arabic-text">تحديد الموقع</CardTitle>
+                  <CardHeader className="pb-4">
+                    <CardTitle className="arabic-text text-lg">تحديد الموقع</CardTitle>
                     <CardDescription className="arabic-text">
                       حدد موقع المشكلة بدقة على الخريطة
                     </CardDescription>
@@ -408,40 +414,33 @@ const Report = () => {
                       onClick={getCurrentLocation}
                       className="w-full btn-secondary flex items-center space-x-2 rtl:space-x-reverse"
                     >
-                      <Target className="h-5 w-5" />
-                      <span>استخدم موقعي الحالي</span>
+                      <Target className="h-4 w-4 sm:h-5 sm:w-5" />
+                      <span className="text-sm sm:text-base">استخدم موقعي الحالي</span>
                     </Button>
                     
-                    {currentLocation && (
-                      <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                    {formData.location && (
+                      <div className="bg-green-50 border border-green-200 rounded-lg p-3 sm:p-4">
                         <div className="flex items-center space-x-2 rtl:space-x-reverse">
-                          <MapPin className="h-5 w-5 text-green-600" />
+                          <MapPin className="h-4 w-4 sm:h-5 sm:w-5 text-green-600 flex-shrink-0" />
                           <div className="arabic-text">
                             <p className="text-sm font-medium text-green-800">تم تحديد الموقع</p>
-                            <p className="text-xs text-green-600">
-                              خط العرض: {currentLocation.lat.toFixed(6)}
-                            </p>
-                            <p className="text-xs text-green-600">
-                              خط الطول: {currentLocation.lng.toFixed(6)}
+                            <p className="text-xs text-green-600 break-all">
+                              {formData.location.lat.toFixed(6)}, {formData.location.lng.toFixed(6)}
                             </p>
                           </div>
                         </div>
                       </div>
                     )}
                     
-                    {/* Simple Map Placeholder */}
-                    <div className="bg-gradient-to-br from-blue-100 to-green-100 rounded-lg h-64 flex items-center justify-center relative overflow-hidden">
-                      <div className="text-center arabic-text">
-                        <MapPin className="h-12 w-12 mx-auto mb-4 text-gray-400" />
-                        <p className="text-gray-600">خريطة تفاعلية لتحديد الموقع</p>
-                        <p className="text-sm text-gray-500 mt-2">(سيتم دمج OpenStreetMap هنا)</p>
-                      </div>
-                      
-                      {currentLocation && (
-                        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
-                          <div className="w-6 h-6 bg-red-500 rounded-full border-2 border-white shadow-lg animate-pulse"></div>
-                        </div>
-                      )}
+                    {/* Interactive Map */}
+                    <div className="border rounded-lg overflow-hidden">
+                      <InteractiveMap
+                        reports={[]}
+                        allowLocationSelect={true}
+                        onLocationSelect={handleLocationSelect}
+                        selectedLocation={formData.location}
+                        height="250px"
+                      />
                     </div>
                   </CardContent>
                 </Card>
@@ -455,16 +454,16 @@ const Report = () => {
                   <Button
                     type="submit"
                     disabled={isSubmitting}
-                    className="btn-primary text-lg px-12 py-4 flex items-center space-x-3 rtl:space-x-reverse"
+                    className="btn-primary text-base sm:text-lg px-8 sm:px-12 py-3 sm:py-4 flex items-center space-x-3 rtl:space-x-reverse w-full sm:w-auto"
                   >
                     {isSubmitting ? (
                       <>
-                        <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                        <div className="animate-spin rounded-full h-4 w-4 sm:h-5 sm:w-5 border-b-2 border-white"></div>
                         <span>جاري الإرسال...</span>
                       </>
                     ) : (
                       <>
-                        <Send className="h-5 w-5" />
+                        <Send className="h-4 w-4 sm:h-5 sm:w-5" />
                         <span>إرسال البلاغ</span>
                       </>
                     )}

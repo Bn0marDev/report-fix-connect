@@ -61,8 +61,8 @@ const RecentReports = () => {
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return {
-      date: date.toLocaleDateString('ar-SA'),
-      time: date.toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit' })
+      date: date.toLocaleDateString('en-US'),
+      time: date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
     };
   };
 
@@ -70,7 +70,7 @@ const RecentReports = () => {
     return (
       <div className="space-y-4 max-h-[500px] overflow-y-auto">
         {[...Array(3)].map((_, index) => (
-          <div key={index} className="bg-gray-50 rounded-lg p-4 animate-pulse">
+          <div key={index} className="bg-gray-50 rounded-lg p-3 sm:p-4 animate-pulse">
             <div className="h-4 bg-gray-200 rounded mb-2"></div>
             <div className="h-3 bg-gray-200 rounded mb-2"></div>
             <div className="h-3 bg-gray-200 rounded w-1/2"></div>
@@ -81,34 +81,34 @@ const RecentReports = () => {
   }
 
   return (
-    <div className="space-y-4 max-h-[500px] overflow-y-auto">
+    <div className="space-y-3 sm:space-y-4 max-h-[500px] overflow-y-auto">
       {reports.map((report) => {
         const { date, time } = formatDate(report.created_at);
         
         return (
           <div 
             key={report.id} 
-            className="bg-gray-50 rounded-lg p-4 hover:bg-gray-100 transition-colors cursor-pointer"
+            className="bg-gray-50 rounded-lg p-3 sm:p-4 hover:bg-gray-100 transition-colors cursor-pointer"
           >
-            <div className="flex items-start justify-between mb-2">
-              <h4 className="font-medium text-gray-900 arabic-text">{report.type}</h4>
-              <span className={`status-badge text-xs ${getStatusColor(report.status)}`}>
+            <div className="flex items-start justify-between mb-2 gap-2">
+              <h4 className="font-medium text-gray-900 arabic-text text-sm sm:text-base truncate flex-1">{report.type}</h4>
+              <span className={`status-badge text-xs whitespace-nowrap ${getStatusColor(report.status)}`}>
                 {getStatusText(report.status)}
               </span>
             </div>
             
-            <div className="flex items-center text-sm text-gray-600 mb-2 arabic-text">
-              <MapPin className="h-4 w-4 ml-1" />
-              <span>{report.street_description || 'لم يتم تحديد الموقع'}</span>
+            <div className="flex items-center text-xs sm:text-sm text-gray-600 mb-2 arabic-text">
+              <MapPin className="h-3 w-3 sm:h-4 sm:w-4 ml-1 flex-shrink-0" />
+              <span className="truncate">{report.street_description || 'لم يتم تحديد الموقع'}</span>
             </div>
             
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between gap-2">
               <div className="flex items-center text-xs text-gray-500 arabic-text">
-                <Clock className="h-3 w-3 ml-1" />
-                <span>{date} - {time}</span>
+                <Clock className="h-3 w-3 ml-1 flex-shrink-0" />
+                <span className="whitespace-nowrap">{date} - {time}</span>
               </div>
               
-              <button className="flex items-center text-xs text-blue-600 hover:text-blue-800 transition-colors">
+              <button className="flex items-center text-xs text-blue-600 hover:text-blue-800 transition-colors whitespace-nowrap">
                 <Eye className="h-3 w-3 ml-1" />
                 <span>عرض</span>
               </button>
@@ -118,9 +118,9 @@ const RecentReports = () => {
       })}
       
       {reports.length === 0 && !loading && (
-        <div className="text-center py-8 text-gray-500 arabic-text">
-          <MapPin className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-          <p>لا توجد بلاغات حديثة</p>
+        <div className="text-center py-6 sm:py-8 text-gray-500 arabic-text">
+          <MapPin className="h-10 w-10 sm:h-12 sm:w-12 mx-auto mb-4 text-gray-300" />
+          <p className="text-sm sm:text-base">لا توجد بلاغات حديثة</p>
         </div>
       )}
     </div>
