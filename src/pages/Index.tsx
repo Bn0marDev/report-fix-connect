@@ -62,7 +62,7 @@ const Index = () => {
                 <MapPin className="h-8 w-8 text-white" />
               </div>
               <div className="arabic-text">
-                <h1 className="text-2xl font-bold text-gray-900">منصة الإبلاغ عن أعطال الطرق</h1>
+                <h1 className="text-2xl font-bold text-gray-900">منصة مدينتي الإبلاغ عن أعطال الطرق</h1>
                 <p className="text-gray-600">تحسين البنية التحتية من خلال مشاركة المجتمع</p>
               </div>
             </div>
@@ -236,10 +236,10 @@ const Index = () => {
         <div className="container mx-auto px-4 py-8">
           <div className="text-center arabic-text">
             <p className="text-gray-400">
-              © 2024 منصة الإبلاغ عن أعطال الطرق. جميع الحقوق محفوظة.
+              © 2024 منصة مدينتي الإبلاغ عن أعطال الطرق. جميع الحقوق محفوظة.
             </p>
             <p className="text-gray-500 mt-2">
-              تم تطويرها بواسطة Lovable.dev
+              تم تطويرها بواسطة m0usa.ly
             </p>
           </div>
         </div>
