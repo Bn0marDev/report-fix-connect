@@ -1,69 +1,83 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Trophy, Medal, Award, ArrowRight, Star, TrendingUp } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
 
-// Mock data for leaderboard
-const leaderboardData = [
-  {
-    id: 1,
-    name: 'أحمد محمد العلي',
-    completedReports: 48,
-    totalReports: 52,
-    successRate: 92,
-    badge: 'ذهبي',
-    joinDate: '2024-01-15'
-  },
-  {
-    id: 2,
-    name: 'فاطمة سعد الخالد',
-    completedReports: 41,
-    totalReports: 45,
-    successRate: 91,
-    badge: 'فضي',
-    joinDate: '2024-02-03'
-  },
-  {
-    id: 3,
-    name: 'محمد عبدالله النصر',
-    completedReports: 35,
-    totalReports: 40,
-    successRate: 88,
-    badge: 'برونزي',
-    joinDate: '2024-01-28'
-  },
-  {
-    id: 4,
-    name: 'نورا أحمد الزهراني',
-    completedReports: 32,
-    totalReports: 36,
-    successRate: 89,
-    badge: 'متقدم',
-    joinDate: '2024-03-10'
-  },
-  {
-    id: 5,
-    name: 'سعد عبدالرحمن المطيري',
-    completedReports: 28,
-    totalReports: 33,
-    successRate: 85,
-    badge: 'متقدم',
-    joinDate: '2024-02-20'
-  },
-  {
-    id: 6,
-    name: 'مريم خالد العتيبي',
-    completedReports: 25,
-    totalReports: 29,
-    successRate: 86,
-    badge: 'مبتدئ',
-    joinDate: '2024-03-15'
-  }
-];
+interface Contributor {
+  id: string;
+  name: string;
+  phone: string;
+  total_reports: number;
+  completed_reports: number;
+  success_rate: number;
+  badge: string;
+  join_date: string;
+}
 
 const Leaderboard = () => {
+  const [contributors, setContributors] = useState<Contributor[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [stats, setStats] = useState({
+    totalCompletedReports: 0,
+    totalActiveContributors: 0,
+    averageSuccessRate: 0
+  });
+
+  useEffect(() => {
+    fetchContributors();
+    fetchStats();
+  }, []);
+
+  const fetchContributors = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('contributors')
+        .select('*')
+        .order('completed_reports', { ascending: false });
+
+      if (error) {
+        console.error('Error fetching contributors:', error);
+        return;
+      }
+
+      setContributors(data || []);
+    } catch (error) {
+      console.error('Error fetching contributors:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchStats = async () => {
+    try {
+      const { data: contributorsData, error: contributorsError } = await supabase
+        .from('contributors')
+        .select('completed_reports, success_rate');
+
+      if (contributorsError) {
+        console.error('Error fetching stats:', contributorsError);
+        return;
+      }
+
+      const totalCompletedReports = contributorsData?.reduce((sum, c) => sum + c.completed_reports, 0) || 0;
+      const totalActiveContributors = contributorsData?.length || 0;
+      const averageSuccessRate = totalActiveContributors > 0 
+        ? Math.round(contributorsData?.reduce((sum, c) => sum + (c.success_rate || 0), 0) / totalActiveContributors)
+        : 0;
+
+      setStats({
+        totalCompletedReports,
+        totalActiveContributors,
+        averageSuccessRate
+      });
+    } catch (error) {
+      console.error('Error fetching stats:', error);
+    }
+  };
+
   const getBadgeIcon = (position: number) => {
     switch (position) {
       case 1: return <Trophy className="h-6 w-6 text-yellow-500" />;
@@ -89,6 +103,17 @@ const Leaderboard = () => {
     }
     return 'bg-white border border-gray-200';
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
+          <p className="text-gray-600 arabic-text">جاري تحميل البيانات...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50">
@@ -132,7 +157,7 @@ const Leaderboard = () => {
                 <div className="bg-gradient-to-br from-blue-500 to-blue-600 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
                   <TrendingUp className="h-8 w-8 text-white" />
                 </div>
-                <h3 className="text-2xl font-bold text-gray-900 mb-2">156</h3>
+                <h3 className="text-2xl font-bold text-gray-900 mb-2">{stats.totalCompletedReports}</h3>
                 <p className="text-gray-600 arabic-text">إجمالي البلاغات المُصلحة</p>
               </CardContent>
             </Card>
@@ -142,7 +167,7 @@ const Leaderboard = () => {
                 <div className="bg-gradient-to-br from-green-500 to-green-600 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
                   <Star className="h-8 w-8 text-white" />
                 </div>
-                <h3 className="text-2xl font-bold text-gray-900 mb-2">24</h3>
+                <h3 className="text-2xl font-bold text-gray-900 mb-2">{stats.totalActiveContributors}</h3>
                 <p className="text-gray-600 arabic-text">عدد المساهمين النشطين</p>
               </CardContent>
             </Card>
@@ -152,39 +177,41 @@ const Leaderboard = () => {
                 <div className="bg-gradient-to-br from-purple-500 to-purple-600 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
                   <Trophy className="h-8 w-8 text-white" />
                 </div>
-                <h3 className="text-2xl font-bold text-gray-900 mb-2">89%</h3>
+                <h3 className="text-2xl font-bold text-gray-900 mb-2">{stats.averageSuccessRate}%</h3>
                 <p className="text-gray-600 arabic-text">معدل نجاح الإصلاحات</p>
               </CardContent>
             </Card>
           </div>
 
           {/* Top 3 Winners */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
-            {leaderboardData.slice(0, 3).map((user, index) => (
-              <Card key={user.id} className={`card-hover ${getPositionStyle(index + 1)}`}>
-                <CardHeader className="text-center pb-2">
-                  <div className="flex justify-center mb-4">
-                    {getBadgeIcon(index + 1)}
-                  </div>
-                  <CardTitle className="arabic-text text-lg">{user.name}</CardTitle>
-                  <div className={`inline-block px-3 py-1 rounded-full text-sm font-medium border ${getBadgeColor(user.badge)}`}>
-                    {user.badge}
-                  </div>
-                </CardHeader>
-                <CardContent className="text-center space-y-2">
-                  <div className="space-y-1">
-                    <p className="text-2xl font-bold text-blue-600">{user.completedReports}</p>
-                    <p className="text-sm text-gray-600 arabic-text">بلاغ مُصلح</p>
-                  </div>
-                  <div className="pt-2 border-t border-gray-200">
-                    <p className="text-sm text-gray-600 arabic-text">
-                      معدل النجاح: <span className="font-semibold text-green-600">{user.successRate}%</span>
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+          {contributors.length > 0 && (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+              {contributors.slice(0, 3).map((user, index) => (
+                <Card key={user.id} className={`card-hover ${getPositionStyle(index + 1)}`}>
+                  <CardHeader className="text-center pb-2">
+                    <div className="flex justify-center mb-4">
+                      {getBadgeIcon(index + 1)}
+                    </div>
+                    <CardTitle className="arabic-text text-lg">{user.name}</CardTitle>
+                    <div className={`inline-block px-3 py-1 rounded-full text-sm font-medium border ${getBadgeColor(user.badge)}`}>
+                      {user.badge}
+                    </div>
+                  </CardHeader>
+                  <CardContent className="text-center space-y-2">
+                    <div className="space-y-1">
+                      <p className="text-2xl font-bold text-blue-600">{user.completed_reports}</p>
+                      <p className="text-sm text-gray-600 arabic-text">بلاغ مُصلح</p>
+                    </div>
+                    <div className="pt-2 border-t border-gray-200">
+                      <p className="text-sm text-gray-600 arabic-text">
+                        معدل النجاح: <span className="font-semibold text-green-600">{user.success_rate}%</span>
+                      </p>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
 
           {/* Full Leaderboard */}
           <Card>
@@ -196,50 +223,52 @@ const Leaderboard = () => {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {leaderboardData.map((user, index) => (
-                  <div 
-                    key={user.id}
-                    className={`flex items-center justify-between p-4 rounded-lg ${getPositionStyle(index + 1)} transition-all duration-200 hover:shadow-md`}
-                  >
-                    <div className="flex items-center space-x-4 rtl:space-x-reverse">
-                      <div className="flex items-center justify-center w-10 h-10 rounded-full bg-gray-100">
-                        <span className="font-bold text-gray-600">#{index + 1}</span>
+                {contributors.length > 0 ? (
+                  contributors.map((user, index) => (
+                    <div 
+                      key={user.id}
+                      className={`flex items-center justify-between p-4 rounded-lg ${getPositionStyle(index + 1)} transition-all duration-200 hover:shadow-md`}
+                    >
+                      <div className="flex items-center space-x-4 rtl:space-x-reverse">
+                        <div className="flex items-center justify-center w-10 h-10 rounded-full bg-gray-100">
+                          <span className="font-bold text-gray-600">#{index + 1}</span>
+                        </div>
+                        
+                        <div className="arabic-text">
+                          <h4 className="font-semibold text-gray-900">{user.name}</h4>
+                          <p className="text-sm text-gray-600">انضم في {new Date(user.join_date).toLocaleDateString('ar-SA')}</p>
+                        </div>
                       </div>
                       
-                      <div className="arabic-text">
-                        <h4 className="font-semibold text-gray-900">{user.name}</h4>
-                        <p className="text-sm text-gray-600">انضم في {user.joinDate}</p>
+                      <div className="flex items-center space-x-6 rtl:space-x-reverse">
+                        <div className="text-center">
+                          <p className="text-2xl font-bold text-blue-600">{user.completed_reports}</p>
+                          <p className="text-xs text-gray-600 arabic-text">مُصلح</p>
+                        </div>
+                        
+                        <div className="text-center">
+                          <p className="text-lg font-semibold text-gray-700">{user.total_reports}</p>
+                          <p className="text-xs text-gray-600 arabic-text">إجمالي</p>
+                        </div>
+                        
+                        <div className="text-center">
+                          <p className="text-lg font-semibold text-green-600">{user.success_rate}%</p>
+                          <p className="text-xs text-gray-600 arabic-text">نجاح</p>
+                        </div>
+                        
+                        <div className={`px-3 py-1 rounded-full text-sm font-medium border ${getBadgeColor(user.badge)}`}>
+                          {user.badge}
+                        </div>
                       </div>
                     </div>
-                    
-                    <div className="flex items-center space-x-6 rtl:space-x-reverse">
-                      <div className="text-center">
-                        <p className="text-2xl font-bold text-blue-600">{user.completedReports}</p>
-                        <p className="text-xs text-gray-600 arabic-text">مُصلح</p>
-                      </div>
-                      
-                      <div className="text-center">
-                        <p className="text-lg font-semibold text-gray-700">{user.totalReports}</p>
-                        <p className="text-xs text-gray-600 arabic-text">إجمالي</p>
-                      </div>
-                      
-                      <div className="text-center">
-                        <p className="text-lg font-semibold text-green-600">{user.successRate}%</p>
-                        <p className="text-xs text-gray-600 arabic-text">نجاح</p>
-                      </div>
-                      
-                      <div className={`px-3 py-1 rounded-full text-sm font-medium border ${getBadgeColor(user.badge)}`}>
-                        {user.badge}
-                      </div>
-                    </div>
+                  ))
+                ) : (
+                  <div className="text-center py-12">
+                    <Trophy className="h-12 w-12 mx-auto text-gray-300 mb-4" />
+                    <p className="text-gray-500 arabic-text">لا توجد مساهمات بعد</p>
+                    <p className="text-sm text-gray-400 arabic-text mt-2">كن أول من يساهم في تحسين الطرق!</p>
                   </div>
-                ))}
-              </div>
-              
-              <div className="mt-8 text-center">
-                <Button variant="outline" className="arabic-text">
-                  عرض المزيد من المساهمين
-                </Button>
+                )}
               </div>
             </CardContent>
           </Card>

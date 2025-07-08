@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Link } from 'react-router-dom';
 import MapView from '@/components/MapView';
 import RecentReports from '@/components/RecentReports';
+import { supabase } from '@/integrations/supabase/client';
 
 const Index = () => {
   const [stats, setStats] = useState({
@@ -14,16 +15,41 @@ const Index = () => {
     inProgressReports: 0,
     completedReports: 0
   });
+  const [loading, setLoading] = useState(true);
 
-  // Mock data for demonstration - في التطبيق الحقيقي سيتم جلب البيانات من قاعدة البيانات
+  // جلب الإحصائيات من قاعدة البيانات
   useEffect(() => {
-    setStats({
-      totalReports: 156,
-      pendingReports: 23,
-      inProgressReports: 45,
-      completedReports: 88
-    });
+    fetchStats();
   }, []);
+
+  const fetchStats = async () => {
+    try {
+      const { data: reports, error } = await supabase
+        .from('reports')
+        .select('status');
+
+      if (error) {
+        console.error('Error fetching stats:', error);
+        return;
+      }
+
+      const totalReports = reports?.length || 0;
+      const pendingReports = reports?.filter(r => r.status === 'pending').length || 0;
+      const inProgressReports = reports?.filter(r => r.status === 'in-progress').length || 0;
+      const completedReports = reports?.filter(r => r.status === 'completed').length || 0;
+
+      setStats({
+        totalReports,
+        pendingReports,
+        inProgressReports,
+        completedReports
+      });
+    } catch (error) {
+      console.error('Error fetching stats:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50">
@@ -90,7 +116,9 @@ const Index = () => {
               <BarChart3 className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{stats.totalReports}</div>
+              <div className="text-2xl font-bold">
+                {loading ? '...' : stats.totalReports}
+              </div>
               <p className="text-xs text-muted-foreground arabic-text">منذ بداية المشروع</p>
             </CardContent>
           </Card>
@@ -101,7 +129,9 @@ const Index = () => {
               <AlertTriangle className="h-4 w-4 text-yellow-600" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-yellow-600">{stats.pendingReports}</div>
+              <div className="text-2xl font-bold text-yellow-600">
+                {loading ? '...' : stats.pendingReports}
+              </div>
               <p className="text-xs text-muted-foreground arabic-text">في انتظار المراجعة</p>
             </CardContent>
           </Card>
@@ -112,7 +142,9 @@ const Index = () => {
               <Clock className="h-4 w-4 text-blue-600" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-blue-600">{stats.inProgressReports}</div>
+              <div className="text-2xl font-bold text-blue-600">
+                {loading ? '...' : stats.inProgressReports}
+              </div>
               <p className="text-xs text-muted-foreground arabic-text">يتم العمل عليها</p>
             </CardContent>
           </Card>
@@ -123,7 +155,9 @@ const Index = () => {
               <CheckCircle className="h-4 w-4 text-green-600" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-green-600">{stats.completedReports}</div>
+              <div className="text-2xl font-bold text-green-600">
+                {loading ? '...' : stats.completedReports}
+              </div>
               <p className="text-xs text-muted-foreground arabic-text">تم إنجازها بنجاح</p>
             </CardContent>
           </Card>

@@ -1,52 +1,45 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Clock, MapPin, Eye } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 
-// Mock data for recent reports
-const recentReports = [
-  {
-    id: 1,
-    type: 'حفرة في الطريق',
-    location: 'شارع الملك فهد، الرياض',
-    status: 'pending',
-    date: '2024-07-08',
-    time: '14:30'
-  },
-  {
-    id: 2,
-    type: 'إضاءة معطلة',
-    location: 'طريق الأمير محمد بن عبدالعزيز',
-    status: 'in-progress',
-    date: '2024-07-08',
-    time: '12:15'
-  },
-  {
-    id: 3,
-    type: 'رصيف مكسور',
-    location: 'شارع العليا الرئيسي',
-    status: 'completed',
-    date: '2024-07-07',
-    time: '16:45'
-  },
-  {
-    id: 4,
-    type: 'انتهاك في الطريق',
-    location: 'طريق الدائري الشرقي',
-    status: 'pending',
-    date: '2024-07-07',
-    time: '10:20'
-  },
-  {
-    id: 5,
-    type: 'حفرة في الطريق',
-    location: 'شارع التحلية',
-    status: 'in-progress',
-    date: '2024-07-06',
-    time: '09:30'
-  }
-];
+interface Report {
+  id: string;
+  type: string;
+  street_description: string;
+  status: string;
+  created_at: string;
+}
 
 const RecentReports = () => {
+  const [reports, setReports] = useState<Report[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchRecentReports();
+  }, []);
+
+  const fetchRecentReports = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('reports')
+        .select('id, type, street_description, status, created_at')
+        .order('created_at', { ascending: false })
+        .limit(5);
+
+      if (error) {
+        console.error('Error fetching recent reports:', error);
+        return;
+      }
+
+      setReports(data || []);
+    } catch (error) {
+      console.error('Error fetching recent reports:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'pending': return 'status-pending';
@@ -65,40 +58,66 @@ const RecentReports = () => {
     }
   };
 
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return {
+      date: date.toLocaleDateString('ar-SA'),
+      time: date.toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit' })
+    };
+  };
+
+  if (loading) {
+    return (
+      <div className="space-y-4 max-h-[500px] overflow-y-auto">
+        {[...Array(3)].map((_, index) => (
+          <div key={index} className="bg-gray-50 rounded-lg p-4 animate-pulse">
+            <div className="h-4 bg-gray-200 rounded mb-2"></div>
+            <div className="h-3 bg-gray-200 rounded mb-2"></div>
+            <div className="h-3 bg-gray-200 rounded w-1/2"></div>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-4 max-h-[500px] overflow-y-auto">
-      {recentReports.map((report) => (
-        <div 
-          key={report.id} 
-          className="bg-gray-50 rounded-lg p-4 hover:bg-gray-100 transition-colors cursor-pointer"
-        >
-          <div className="flex items-start justify-between mb-2">
-            <h4 className="font-medium text-gray-900 arabic-text">{report.type}</h4>
-            <span className={`status-badge text-xs ${getStatusColor(report.status)}`}>
-              {getStatusText(report.status)}
-            </span>
-          </div>
-          
-          <div className="flex items-center text-sm text-gray-600 mb-2 arabic-text">
-            <MapPin className="h-4 w-4 ml-1" />
-            <span>{report.location}</span>
-          </div>
-          
-          <div className="flex items-center justify-between">
-            <div className="flex items-center text-xs text-gray-500 arabic-text">
-              <Clock className="h-3 w-3 ml-1" />
-              <span>{report.date} - {report.time}</span>
+      {reports.map((report) => {
+        const { date, time } = formatDate(report.created_at);
+        
+        return (
+          <div 
+            key={report.id} 
+            className="bg-gray-50 rounded-lg p-4 hover:bg-gray-100 transition-colors cursor-pointer"
+          >
+            <div className="flex items-start justify-between mb-2">
+              <h4 className="font-medium text-gray-900 arabic-text">{report.type}</h4>
+              <span className={`status-badge text-xs ${getStatusColor(report.status)}`}>
+                {getStatusText(report.status)}
+              </span>
             </div>
             
-            <button className="flex items-center text-xs text-blue-600 hover:text-blue-800 transition-colors">
-              <Eye className="h-3 w-3 ml-1" />
-              <span>عرض</span>
-            </button>
+            <div className="flex items-center text-sm text-gray-600 mb-2 arabic-text">
+              <MapPin className="h-4 w-4 ml-1" />
+              <span>{report.street_description || 'لم يتم تحديد الموقع'}</span>
+            </div>
+            
+            <div className="flex items-center justify-between">
+              <div className="flex items-center text-xs text-gray-500 arabic-text">
+                <Clock className="h-3 w-3 ml-1" />
+                <span>{date} - {time}</span>
+              </div>
+              
+              <button className="flex items-center text-xs text-blue-600 hover:text-blue-800 transition-colors">
+                <Eye className="h-3 w-3 ml-1" />
+                <span>عرض</span>
+              </button>
+            </div>
           </div>
-        </div>
-      ))}
+        );
+      })}
       
-      {recentReports.length === 0 && (
+      {reports.length === 0 && !loading && (
         <div className="text-center py-8 text-gray-500 arabic-text">
           <MapPin className="h-12 w-12 mx-auto mb-4 text-gray-300" />
           <p>لا توجد بلاغات حديثة</p>

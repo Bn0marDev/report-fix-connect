@@ -9,6 +9,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Link } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 const Report = () => {
   const { toast } = useToast();
@@ -126,10 +127,30 @@ const Report = () => {
     setIsSubmitting(true);
 
     try {
-      // Here you would typically send the data to your backend
-      // For now, we'll simulate the submission
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
+      // إعداد البيانات للإرسال
+      const reportData = {
+        reporter_name: formData.name,
+        reporter_phone: formData.phone,
+        type: formData.reportType === 'أخرى' ? formData.customType : formData.reportType,
+        custom_type: formData.reportType === 'أخرى' ? formData.customType : null,
+        description: formData.description,
+        street_description: formData.streetDescription,
+        location_lat: formData.location.lat,
+        location_lng: formData.location.lng,
+        status: 'pending',
+        priority: 'medium',
+        images: [] // سيتم تحديث هذا لاحقاً لرفع الصور
+      };
+
+      const { data, error } = await supabase
+        .from('reports')
+        .insert([reportData])
+        .select();
+
+      if (error) {
+        throw error;
+      }
+
       toast({
         title: "تم إرسال البلاغ بنجاح",
         description: "شكراً لك على المساهمة في تحسين الطرق",
@@ -149,6 +170,7 @@ const Report = () => {
       setCurrentLocation(null);
       
     } catch (error) {
+      console.error('Error submitting report:', error);
       toast({
         title: "خطأ في الإرسال",
         description: "حدث خطأ أثناء إرسال البلاغ، يرجى المحاولة مرة أخرى",

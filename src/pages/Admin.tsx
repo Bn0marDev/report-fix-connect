@@ -10,69 +10,95 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Link } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
-// Mock data for admin dashboard
-const mockReports = [
-  {
-    id: 1,
-    reporterName: 'أحمد محمد العلي',
-    reporterPhone: '0501234567',
-    type: 'حفرة في الطريق',
-    description: 'حفرة كبيرة في شارع الملك فهد تسبب خطراً على السيارات',
-    streetDescription: 'شارع الملك فهد، بجانب مسجد النور، بعد إشارة المرور الأولى',
-    status: 'pending',
-    priority: 'high',
-    location: { lat: 24.7136, lng: 46.6753 },
-    images: ['image1.jpg', 'image2.jpg'],
-    date: '2024-07-08',
-    time: '14:30',
-    assignedTo: null,
-    notes: ''
-  },
-  {
-    id: 2,
-    reporterName: 'فاطمة سعد الخالد',
-    reporterPhone: '0507654321',
-    type: 'إضاءة معطلة',
-    description: 'عمود الإضاءة لا يعمل منذ أسبوع',
-    streetDescription: 'طريق الأمير محمد بن عبدالعزيز، أمام مجمع الظهران التجاري',
-    status: 'in-progress',
-    priority: 'medium',
-    location: { lat: 24.7186, lng: 46.6803 },
-    images: ['image3.jpg'],
-    date: '2024-07-07',
-    time: '20:15',
-    assignedTo: 'فريق الصيانة الأول',
-    notes: 'تم تحديد موعد الإصلاح ليوم الخميس'
-  },
-  {
-    id: 3,
-    reporterName: 'محمد عبدالله النصر',
-    reporterPhone: '0551122334',
-    type: 'رصيف مكسور',
-    description: 'كسر في الرصيف يعيق مرور المشاة وخاصة ذوي الاحتياجات الخاصة',
-    streetDescription: 'شارع العليا الرئيسي، بجانب بنك الراجحي',
-    status: 'completed',
-    priority: 'low',
-    location: { lat: 24.7086, lng: 46.6703 },
-    images: [],
-    date: '2024-07-06',
-    time: '16:45',
-    assignedTo: 'فريق البنية التحتية',
-    notes: 'تم الإصلاح بنجاح وإعادة تأهيل الرصيف'
-  }
-];
+interface Report {
+  id: string;
+  reporter_name: string;
+  reporter_phone: string;
+  type: string;
+  custom_type?: string;
+  description: string;
+  street_description?: string;
+  status: string;
+  priority: string;
+  location_lat?: number;
+  location_lng?: number;
+  images?: string[];
+  assigned_to?: string;
+  notes?: string;
+  created_at: string;
+  updated_at: string;
+}
 
 const Admin = () => {
   const { toast } = useToast();
-  const [reports, setReports] = useState(mockReports);
-  const [filteredReports, setFilteredReports] = useState(mockReports);
+  const [reports, setReports] = useState<Report[]>([]);
+  const [filteredReports, setFilteredReports] = useState<Report[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [priorityFilter, setPriorityFilter] = useState('all');
-  const [selectedReport, setSelectedReport] = useState<any>(null);
+  const [selectedReport, setSelectedReport] = useState<Report | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [loginForm, setLoginForm] = useState({ username: '', password: '' });
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      fetchReports();
+    }
+  }, [isAuthenticated]);
+
+  useEffect(() => {
+    filterReports();
+  }, [reports, searchTerm, statusFilter, priorityFilter]);
+
+  const fetchReports = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('reports')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Error fetching reports:', error);
+        toast({
+          title: "خطأ في جلب البيانات",
+          description: "حدث خطأ أثناء جلب البلاغات",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      setReports(data || []);
+    } catch (error) {
+      console.error('Error fetching reports:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const filterReports = () => {
+    let filtered = [...reports];
+
+    if (searchTerm) {
+      filtered = filtered.filter(report => 
+        report.reporter_name.includes(searchTerm) ||
+        report.type.includes(searchTerm) ||
+        report.description.includes(searchTerm)
+      );
+    }
+
+    if (statusFilter !== 'all') {
+      filtered = filtered.filter(report => report.status === statusFilter);
+    }
+
+    if (priorityFilter !== 'all') {
+      filtered = filtered.filter(report => report.priority === priorityFilter);
+    }
+
+    setFilteredReports(filtered);
+  };
 
   // Mock authentication - في التطبيق الحقيقي يجب استخدام نظام مصادقة آمن
   const handleLogin = (e: React.FormEvent) => {
@@ -92,14 +118,33 @@ const Admin = () => {
     }
   };
 
-  const handleStatusChange = (reportId: number, newStatus: string) => {
-    setReports(prev => prev.map(report => 
-      report.id === reportId ? { ...report, status: newStatus } : report
-    ));
-    toast({
-      title: "تم تحديث حالة البلاغ",
-      description: "تم تغيير حالة البلاغ بنجاح",
-    });
+  const handleStatusChange = async (reportId: string, newStatus: string) => {
+    try {
+      const { error } = await supabase
+        .from('reports')
+        .update({ status: newStatus })
+        .eq('id', reportId);
+
+      if (error) {
+        throw error;
+      }
+
+      setReports(prev => prev.map(report => 
+        report.id === reportId ? { ...report, status: newStatus } : report
+      ));
+      
+      toast({
+        title: "تم تحديث حالة البلاغ",
+        description: "تم تغيير حالة البلاغ بنجاح",
+      });
+    } catch (error) {
+      console.error('Error updating report status:', error);
+      toast({
+        title: "خطأ في التحديث",
+        description: "حدث خطأ أثناء تحديث حالة البلاغ",
+        variant: "destructive",
+      });
+    }
   };
 
   const getStatusColor = (status: string) => {
@@ -137,29 +182,6 @@ const Admin = () => {
       default: return 'غير محدد';
     }
   };
-
-  // Filter reports based on search and filters
-  useEffect(() => {
-    let filtered = reports;
-
-    if (searchTerm) {
-      filtered = filtered.filter(report => 
-        report.reporterName.includes(searchTerm) ||
-        report.type.includes(searchTerm) ||
-        report.description.includes(searchTerm)
-      );
-    }
-
-    if (statusFilter !== 'all') {
-      filtered = filtered.filter(report => report.status === statusFilter);
-    }
-
-    if (priorityFilter !== 'all') {
-      filtered = filtered.filter(report => report.priority === priorityFilter);
-    }
-
-    setFilteredReports(filtered);
-  }, [reports, searchTerm, statusFilter, priorityFilter]);
 
   // Login screen
   if (!isAuthenticated) {
@@ -208,6 +230,17 @@ const Admin = () => {
             </div>
           </CardContent>
         </Card>
+      </div>
+    );
+  }
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
+          <p className="text-gray-600 arabic-text">جاري تحميل البيانات...</p>
+        </div>
       </div>
     );
   }
@@ -358,148 +391,161 @@ const Admin = () => {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {filteredReports.map((report) => (
-                <div key={report.id} className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors">
-                  <div className="flex items-center justify-between mb-3">
-                    <div className="flex items-center space-x-4 rtl:space-x-reverse">
-                      <div className="bg-blue-100 text-blue-800 rounded-full w-8 h-8 flex items-center justify-center text-sm font-bold">
-                        #{report.id}
-                      </div>
-                      <div>
-                        <h4 className="font-semibold text-gray-900 arabic-text">{report.type}</h4>
-                        <div className="flex items-center space-x-2 rtl:space-x-reverse text-sm text-gray-600">
-                          <User className="h-4 w-4" />
-                          <span className="arabic-text">{report.reporterName}</span>
-                          <Phone className="h-4 w-4" />
-                          <span>{report.reporterPhone}</span>
+              {filteredReports.length > 0 ? (
+                filteredReports.map((report) => (
+                  <div key={report.id} className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors">
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center space-x-4 rtl:space-x-reverse">
+                        <div className="bg-blue-100 text-blue-800 rounded-full w-8 h-8 flex items-center justify-center text-sm font-bold">
+                          #{report.id.slice(-4)}
+                        </div>
+                        <div>
+                          <h4 className="font-semibold text-gray-900 arabic-text">{report.type}</h4>
+                          <div className="flex items-center space-x-2 rtl:space-x-reverse text-sm text-gray-600">
+                            <User className="h-4 w-4" />
+                            <span className="arabic-text">{report.reporter_name}</span>
+                            <Phone className="h-4 w-4" />
+                            <span>{report.reporter_phone}</span>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                    
-                    <div className="flex items-center space-x-3 rtl:space-x-reverse">
-                      <Badge className={getStatusColor(report.status)}>
-                        {getStatusText(report.status)}
-                      </Badge>
-                      <Badge className={getPriorityColor(report.priority)}>
-                        {getPriorityText(report.priority)}
-                      </Badge>
-                    </div>
-                  </div>
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                    <div>
-                      <p className="text-sm text-gray-600 arabic-text mb-1">وصف المشكلة:</p>
-                      <p className="text-sm text-gray-900 arabic-text">{report.description}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-gray-600 arabic-text mb-1">وصف الموقع:</p>
-                      <p className="text-sm text-gray-900 arabic-text">{report.streetDescription}</p>
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-4 rtl:space-x-reverse text-sm text-gray-600">
-                      <div className="flex items-center space-x-1 rtl:space-x-reverse">
-                        <Calendar className="h-4 w-4" />
-                        <span>{report.date} - {report.time}</span>
-                      </div>
-                      <div className="flex items-center space-x-1 rtl:space-x-reverse">
-                        <MapPin className="h-4 w-4" />
-                        <span>خريطة</span>
-                      </div>
-                    </div>
-                    
-                    <div className="flex items-center space-x-2 rtl:space-x-reverse">
-                      <Select
-                        value={report.status}
-                        onValueChange={(value) => handleStatusChange(report.id, value)}
-                      >
-                        <SelectTrigger className="w-32 text-sm">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="pending" className="arabic-text">قيد المراجعة</SelectItem>
-                          <SelectItem value="in-progress" className="arabic-text">قيد الإصلاح</SelectItem>
-                          <SelectItem value="completed" className="arabic-text">تم الإصلاح</SelectItem>
-                        </SelectContent>
-                      </Select>
                       
-                      <Dialog>
-                        <DialogTrigger asChild>
-                          <Button 
-                            variant="outline" 
-                            size="sm"
-                            onClick={() => setSelectedReport(report)}
-                          >
-                            <Eye className="h-4 w-4" />
-                          </Button>
-                        </DialogTrigger>
-                        <DialogContent className="max-w-2xl">
-                          <DialogHeader>
-                            <DialogTitle className="arabic-text">تفاصيل البلاغ #{report.id}</DialogTitle>
-                          </DialogHeader>
-                          <div className="space-y-4">
-                            <div className="grid grid-cols-2 gap-4">
-                              <div>
-                                <p className="text-sm font-medium text-gray-600 arabic-text">اسم المبلغ</p>
-                                <p className="text-sm text-gray-900 arabic-text">{report.reporterName}</p>
-                              </div>
-                              <div>
-                                <p className="text-sm font-medium text-gray-600 arabic-text">رقم الهاتف</p>
-                                <p className="text-sm text-gray-900">{report.reporterPhone}</p>
-                              </div>
-                            </div>
-                            
-                            <div>
-                              <p className="text-sm font-medium text-gray-600 arabic-text">نوع البلاغ</p>
-                              <p className="text-sm text-gray-900 arabic-text">{report.type}</p>
-                            </div>
-                            
-                            <div>
-                              <p className="text-sm font-medium text-gray-600 arabic-text">وصف المشكلة</p>
-                              <p className="text-sm text-gray-900 arabic-text">{report.description}</p>
-                            </div>
-                            
-                            <div>
-                              <p className="text-sm font-medium text-gray-600 arabic-text">وصف الموقع</p>
-                              <p className="text-sm text-gray-900 arabic-text">{report.streetDescription}</p>
-                            </div>
-                            
-                            <div className="grid grid-cols-2 gap-4">
-                              <div>
-                                <p className="text-sm font-medium text-gray-600 arabic-text">التاريخ والوقت</p>
-                                <p className="text-sm text-gray-900">{report.date} - {report.time}</p>
-                              </div>
-                              <div>
-                                <p className="text-sm font-medium text-gray-600 arabic-text">الحالة</p>
-                                <Badge className={getStatusColor(report.status)}>
-                                  {getStatusText(report.status)}
-                                </Badge>
-                              </div>
-                            </div>
-                            
-                            {report.assignedTo && (
-                              <div>
-                                <p className="text-sm font-medium text-gray-600 arabic-text">مُكلف إلى</p>
-                                <p className="text-sm text-gray-900 arabic-text">{report.assignedTo}</p>
-                              </div>
-                            )}
-                            
-                            {report.notes && (
-                              <div>
-                                <p className="text-sm font-medium text-gray-600 arabic-text">ملاحظات</p>
-                                <p className="text-sm text-gray-900 arabic-text">{report.notes}</p>
-                              </div>
-                            )}
+                      <div className="flex items-center space-x-3 rtl:space-x-reverse">
+                        <Badge className={getStatusColor(report.status)}>
+                          {getStatusText(report.status)}
+                        </Badge>
+                        <Badge className={getPriorityColor(report.priority)}>
+                          {getPriorityText(report.priority)}
+                        </Badge>
+                      </div>
+                    </div>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                      <div>
+                        <p className="text-sm text-gray-600 arabic-text mb-1">وصف المشكلة:</p>
+                        <p className="text-sm text-gray-900 arabic-text">{report.description}</p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-gray-600 arabic-text mb-1">وصف الموقع:</p>
+                        <p className="text-sm text-gray-900 arabic-text">{report.street_description || 'لم يتم تحديد'}</p>
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-4 rtl:space-x-reverse text-sm text-gray-600">
+                        <div className="flex items-center space-x-1 rtl:space-x-reverse">
+                          <Calendar className="h-4 w-4" />
+                          <span>{new Date(report.created_at).toLocaleDateString('ar-SA')} - {new Date(report.created_at).toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit' })}</span>
+                        </div>
+                        {report.location_lat && report.location_lng && (
+                          <div className="flex items-center space-x-1 rtl:space-x-reverse">
+                            <MapPin className="h-4 w-4" />
+                            <span>خريطة</span>
                           </div>
-                        </DialogContent>
-                      </Dialog>
+                        )}
+                      </div>
+                      
+                      <div className="flex items-center space-x-2 rtl:space-x-reverse">
+                        <Select
+                          value={report.status}
+                          onValueChange={(value) => handleStatusChange(report.id, value)}
+                        >
+                          <SelectTrigger className="w-32 text-sm">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="pending" className="arabic-text">قيد المراجعة</SelectItem>
+                            <SelectItem value="in-progress" className="arabic-text">قيد الإصلاح</SelectItem>
+                            <SelectItem value="completed" className="arabic-text">تم الإصلاح</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        
+                        <Dialog>
+                          <DialogTrigger asChild>
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => setSelectedReport(report)}
+                            >
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                          </DialogTrigger>
+                          <DialogContent className="max-w-2xl">
+                            <DialogHeader>
+                              <DialogTitle className="arabic-text">تفاصيل البلاغ #{report.id.slice(-8)}</DialogTitle>
+                            </DialogHeader>
+                            <div className="space-y-4">
+                              <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                  <p className="text-sm font-medium text-gray-600 arabic-text">اسم المبلغ</p>
+                                  <p className="text-sm text-gray-900 arabic-text">{report.reporter_name}</p>
+                                </div>
+                                <div>
+                                  <p className="text-sm font-medium text-gray-600 arabic-text">رقم الهاتف</p>
+                                  <p className="text-sm text-gray-900">{report.reporter_phone}</p>
+                                </div>
+                              </div>
+                              
+                              <div>
+                                <p className="text-sm font-medium text-gray-600 arabic-text">نوع البلاغ</p>
+                                <p className="text-sm text-gray-900 arabic-text">{report.type}</p>
+                              </div>
+                              
+                              <div>
+                                <p className="text-sm font-medium text-gray-600 arabic-text">وصف المشكلة</p>
+                                <p className="text-sm text-gray-900 arabic-text">{report.description}</p>
+                              </div>
+                              
+                              {report.street_description && (
+                                <div>
+                                  <p className="text-sm font-medium text-gray-600 arabic-text">وصف الموقع</p>
+                                  <p className="text-sm text-gray-900 arabic-text">{report.street_description}</p>
+                                </div>
+                              )}
+                              
+                              <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                  <p className="text-sm font-medium text-gray-600 arabic-text">التاريخ والوقت</p>
+                                  <p className="text-sm text-gray-900">{new Date(report.created_at).toLocaleDateString('ar-SA')} - {new Date(report.created_at).toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit' })}</p>
+                                </div>
+                                <div>
+                                  <p className="text-sm font-medium text-gray-600 arabic-text">الحالة</p>
+                                  <Badge className={getStatusColor(report.status)}>
+                                    {getStatusText(report.status)}
+                                  </Badge>
+                                </div>
+                              </div>
+                              
+                              {report.location_lat && report.location_lng && (
+                                <div>
+                                  <p className="text-sm font-medium text-gray-600 arabic-text">الإحداثيات</p>
+                                  <p className="text-sm text-gray-900">
+                                    خط العرض: {report.location_lat} | خط الطول: {report.location_lng}
+                                  </p>
+                                </div>
+                              )}
+                              
+                              {report.assigned_to && (
+                                <div>
+                                  <p className="text-sm font-medium text-gray-600 arabic-text">مُكلف إلى</p>
+                                  <p className="text-sm text-gray-900 arabic-text">{report.assigned_to}</p>
+                                </div>
+                              )}
+                              
+                              {report.notes && (
+                                <div>
+                                  <p className="text-sm font-medium text-gray-600 arabic-text">ملاحظات</p>
+                                  <p className="text-sm text-gray-900 arabic-text">{report.notes}</p>
+                                </div>
+                              )}
+                            </div>
+                          </DialogContent>
+                        </Dialog>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
-              
-              {filteredReports.length === 0 && (
+                ))
+              ) : (
                 <div className="text-center py-12">
                   <AlertTriangle className="h-12 w-12 mx-auto text-gray-300 mb-4" />
                   <p className="text-gray-500 arabic-text">لا توجد بلاغات تطابق معايير البحث</p>

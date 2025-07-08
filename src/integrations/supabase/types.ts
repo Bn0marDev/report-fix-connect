@@ -14,7 +14,123 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      admins: {
+        Row: {
+          created_at: string
+          id: string
+          password_hash: string
+          username: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          password_hash: string
+          username: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          password_hash?: string
+          username?: string
+        }
+        Relationships: []
+      }
+      contributors: {
+        Row: {
+          badge: string
+          completed_reports: number
+          created_at: string
+          id: string
+          join_date: string
+          name: string
+          phone: string
+          success_rate: number | null
+          total_reports: number
+          updated_at: string
+        }
+        Insert: {
+          badge?: string
+          completed_reports?: number
+          created_at?: string
+          id?: string
+          join_date?: string
+          name: string
+          phone: string
+          success_rate?: number | null
+          total_reports?: number
+          updated_at?: string
+        }
+        Update: {
+          badge?: string
+          completed_reports?: number
+          created_at?: string
+          id?: string
+          join_date?: string
+          name?: string
+          phone?: string
+          success_rate?: number | null
+          total_reports?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      reports: {
+        Row: {
+          assigned_to: string | null
+          created_at: string
+          custom_type: string | null
+          description: string
+          id: string
+          images: string[] | null
+          location_lat: number | null
+          location_lng: number | null
+          notes: string | null
+          priority: string
+          reporter_name: string
+          reporter_phone: string
+          status: string
+          street_description: string | null
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          assigned_to?: string | null
+          created_at?: string
+          custom_type?: string | null
+          description: string
+          id?: string
+          images?: string[] | null
+          location_lat?: number | null
+          location_lng?: number | null
+          notes?: string | null
+          priority?: string
+          reporter_name: string
+          reporter_phone: string
+          status?: string
+          street_description?: string | null
+          type: string
+          updated_at?: string
+        }
+        Update: {
+          assigned_to?: string | null
+          created_at?: string
+          custom_type?: string | null
+          description?: string
+          id?: string
+          images?: string[] | null
+          location_lat?: number | null
+          location_lng?: number | null
+          notes?: string | null
+          priority?: string
+          reporter_name?: string
+          reporter_phone?: string
+          status?: string
+          street_description?: string | null
+          type?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
