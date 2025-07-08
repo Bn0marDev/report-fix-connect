@@ -334,7 +334,7 @@ const Report = () => {
                       <Label htmlFor="streetDescription" className="arabic-text">وصف الشارع والمنطقة</Label>
                       <Textarea
                         id="streetDescription"
-                        placeholder="مثال: شارع الملك فهد، بجانب مسجد النور، بعد إشارة المرور الأولى..."
+                        placeholder="مثال: مصراتة شارع طرابلس ، بجانب جزيرة العلم ،    ..."
                         value={formData.streetDescription}
                         onChange={(e) => handleInputChange('streetDescription', e.target.value)}
                         className="min-h-[60px] sm:min-h-[80px] arabic-text"
