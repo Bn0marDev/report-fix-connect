@@ -1,245 +1,223 @@
 
-import React, { useState, useEffect } from 'react';
-import { MapPin, Plus, Users, BarChart3, AlertTriangle, CheckCircle, Clock } from 'lucide-react';
+import React from 'react';
+import { MapPin, Plus, Users, BarChart3, Award, ArrowLeft, Code2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Link } from 'react-router-dom';
-import MapView from '@/components/MapView';
 import RecentReports from '@/components/RecentReports';
-import { supabase } from '@/integrations/supabase/client';
 
 const Index = () => {
-  const [stats, setStats] = useState({
-    totalReports: 0,
-    pendingReports: 0,
-    inProgressReports: 0,
-    completedReports: 0
-  });
-  const [loading, setLoading] = useState(true);
-
-  // جلب الإحصائيات من قاعدة البيانات
-  useEffect(() => {
-    fetchStats();
-  }, []);
-
-  const fetchStats = async () => {
-    try {
-      const { data: reports, error } = await supabase
-        .from('reports')
-        .select('status');
-
-      if (error) {
-        console.error('Error fetching stats:', error);
-        return;
-      }
-
-      const totalReports = reports?.length || 0;
-      const pendingReports = reports?.filter(r => r.status === 'pending').length || 0;
-      const inProgressReports = reports?.filter(r => r.status === 'in-progress').length || 0;
-      const completedReports = reports?.filter(r => r.status === 'completed').length || 0;
-
-      setStats({
-        totalReports,
-        pendingReports,
-        inProgressReports,
-        completedReports
-      });
-    } catch (error) {
-      console.error('Error fetching stats:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50">
       {/* Header */}
-      <header className="bg-white/80 backdrop-blur-sm border-b border-gray-200 sticky top-0 z-50">
+      <header className="bg-white/80 backdrop-blur-sm border-b border-gray-200">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3 rtl:space-x-reverse">
               <div className="bg-gradient-to-br from-blue-500 to-green-500 p-2 rounded-xl">
-                <MapPin className="h-8 w-8 text-white" />
+                <MapPin className="h-6 w-6 text-white" />
               </div>
-              <div className="arabic-text">
-                <h1 className="text-2xl font-bold text-gray-900">منصة مدينتي الإبلاغ عن أعطال الطرق</h1>
-                <p className="text-gray-600">تحسين البنية التحتية من خلال مشاركة المجتمع</p>
+              <div>
+                <h1 className="text-xl font-bold text-gray-900 arabic-text">بلاغات البلدية</h1>
+                <p className="text-sm text-gray-600 arabic-text">نحو مدينة أفضل</p>
               </div>
             </div>
             
-            <div className="flex items-center space-x-4 rtl:space-x-reverse">
-              <Link to="/report">
-                <Button className="btn-primary flex items-center space-x-2 rtl:space-x-reverse">
-                  <Plus className="h-5 w-5" />
-                  <span>إبلاغ جديد</span>
-                </Button>
+            <nav className="hidden md:flex items-center space-x-6 rtl:space-x-reverse">
+              <Link to="/leaderboard" className="flex items-center space-x-2 rtl:space-x-reverse text-gray-600 hover:text-blue-600 transition-colors">
+                <Award className="h-4 w-4" />
+                <span className="arabic-text">لوحة الشرف</span>
               </Link>
-              <Link to="/leaderboard">
-                <Button variant="outline" className="flex items-center space-x-2 rtl:space-x-reverse">
-                  <Users className="h-5 w-5" />
-                  <span>المتصدرون</span>
-                </Button>
+              <Link to="/admin" className="flex items-center space-x-2 rtl:space-x-reverse text-gray-600 hover:text-blue-600 transition-colors">
+                <BarChart3 className="h-4 w-4" />
+                <span className="arabic-text">لوحة التحكم</span>
               </Link>
-              <Link to="/admin">
-                <Button variant="outline" className="flex items-center space-x-2 rtl:space-x-reverse">
-                  <BarChart3 className="h-5 w-5" />
-                  <span>لوحة التحكم</span>
-                </Button>
+              <Link to="/developers" className="flex items-center space-x-2 rtl:space-x-reverse text-gray-600 hover:text-blue-600 transition-colors">
+                <Code2 className="h-4 w-4" />
+                <span className="arabic-text">فريق التطوير</span>
               </Link>
-            </div>
+            </nav>
           </div>
         </div>
       </header>
 
       {/* Hero Section */}
-      <section className="container mx-auto px-4 py-12">
-        <div className="text-center arabic-text mb-12">
-          <h2 className="text-4xl font-bold text-gray-900 mb-4">
-            معاً نحو طرق أفضل وأكثر أماناً
+      <section className="container mx-auto px-4 py-12 sm:py-16">
+        <div className="text-center max-w-4xl mx-auto">
+          <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-gray-900 mb-6 arabic-text">
+            ساهم في تطوير مدينتك
           </h2>
-          <p className="text-xl text-gray-600 max-w-3xl mx-auto mb-8">
-            ساهم في تحسين البنية التحتية للطرق من خلال الإبلاغ عن الأعطال والمشاكل. 
-            كل بلاغ يساعد في جعل طرقنا أكثر أماناً للجميع.
+          <p className="text-lg sm:text-xl text-gray-600 mb-8 arabic-text leading-relaxed">
+            بلّغ عن المشاكل البلدية واتبع حالة البلاغات لجعل مدينتنا مكاناً أفضل للعيش
           </p>
-          <Link to="/report">
-            <Button size="lg" className="btn-primary text-lg px-8 py-4">
-              ابدأ بالإبلاغ الآن
-            </Button>
-          </Link>
-        </div>
-
-        {/* Statistics Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
-          <Card className="card-hover">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium arabic-text">إجمالي البلاغات</CardTitle>
-              <BarChart3 className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                {loading ? '...' : stats.totalReports}
-              </div>
-              <p className="text-xs text-muted-foreground arabic-text">منذ بداية المشروع</p>
-            </CardContent>
-          </Card>
-
-          <Card className="card-hover">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium arabic-text">قيد المراجعة</CardTitle>
-              <AlertTriangle className="h-4 w-4 text-yellow-600" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-yellow-600">
-                {loading ? '...' : stats.pendingReports}
-              </div>
-              <p className="text-xs text-muted-foreground arabic-text">في انتظار المراجعة</p>
-            </CardContent>
-          </Card>
-
-          <Card className="card-hover">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium arabic-text">قيد الإصلاح</CardTitle>
-              <Clock className="h-4 w-4 text-blue-600" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-blue-600">
-                {loading ? '...' : stats.inProgressReports}
-              </div>
-              <p className="text-xs text-muted-foreground arabic-text">يتم العمل عليها</p>
-            </CardContent>
-          </Card>
-
-          <Card className="card-hover">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium arabic-text">تم الإصلاح</CardTitle>
-              <CheckCircle className="h-4 w-4 text-green-600" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-green-600">
-                {loading ? '...' : stats.completedReports}
-              </div>
-              <p className="text-xs text-muted-foreground arabic-text">تم إنجازها بنجاح</p>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Main Content Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Map Section */}
-          <div className="lg:col-span-2">
-            <Card className="h-[600px]">
-              <CardHeader>
-                <CardTitle className="arabic-text">خريطة البلاغات</CardTitle>
-                <CardDescription className="arabic-text">
-                  اعرض جميع البلاغات على الخريطة وتفاعل معها
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="h-[500px]">
-                <MapView />
-              </CardContent>
-            </Card>
+          
+          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+            <Link to="/report">
+              <Button size="lg" className="btn-primary w-full sm:w-auto">
+                <Plus className="ml-2 h-5 w-5" />
+                تقديم بلاغ جديد
+              </Button>
+            </Link>
+            
+            <Link to="/admin">
+              <Button variant="outline" size="lg" className="w-full sm:w-auto">
+                <BarChart3 className="ml-2 h-5 w-5" />
+                عرض الإحصائيات
+              </Button>
+            </Link>
           </div>
+        </div>
+      </section>
 
-          {/* Recent Reports Sidebar */}
-          <div className="lg:col-span-1">
-            <Card className="h-[600px]">
-              <CardHeader>
-                <CardTitle className="arabic-text">البلاغات الحديثة</CardTitle>
-                <CardDescription className="arabic-text">
-                  آخر البلاغات المرسلة للمنصة
-                </CardDescription>
+      {/* Features Grid */}
+      <section className="container mx-auto px-4 py-12">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8">
+          <Card className="card-hover text-center">
+            <CardHeader>
+              <div className="bg-blue-100 w-12 h-12 rounded-xl flex items-center justify-center mx-auto mb-4">
+                <MapPin className="h-6 w-6 text-blue-600" />
+              </div>
+              <CardTitle className="arabic-text">تحديد الموقع بدقة</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <CardDescription className="arabic-text">
+                حدد موقع المشكلة بدقة على الخريطة لتسهيل عملية الإصلاح
+              </CardDescription>
+            </CardContent>
+          </Card>
+
+          <Card className="card-hover text-center">
+            <CardHeader>
+              <div className="bg-green-100 w-12 h-12 rounded-xl flex items-center justify-center mx-auto mb-4">
+                <Users className="h-6 w-6 text-green-600" />
+              </div>
+              <CardTitle className="arabic-text">مشاركة المجتمع</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <CardDescription className="arabic-text">
+                شارك مع أفراد المجتمع في تحسين المدينة وحل المشاكل
+              </CardDescription>
+            </CardContent>
+          </Card>
+
+          <Card className="card-hover text-center">
+            <CardHeader>
+              <div className="bg-purple-100 w-12 h-12 rounded-xl flex items-center justify-center mx-auto mb-4">
+                <BarChart3 className="h-6 w-6 text-purple-600" />
+              </div>
+              <CardTitle className="arabic-text">متابعة مستمرة</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <CardDescription className="arabic-text">
+                تابع حالة بلاغك من التقديم حتى الإنجاز مع تحديثات مستمرة
+              </CardDescription>
+            </CardContent>
+          </Card>
+        </div>
+      </section>
+
+      {/* Recent Reports Section */}
+      <section className="container mx-auto px-4 py-12">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          <div className="lg:col-span-2">
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between">
+                <div>
+                  <CardTitle className="arabic-text">البلاغات الحديثة</CardTitle>
+                  <CardDescription className="arabic-text">
+                    آخر البلاغات المقدمة من المواطنين
+                  </CardDescription>
+                </div>
+                <Link to="/admin">
+                  <Button variant="ghost" size="sm" className="arabic-text">
+                    عرض الكل
+                    <ArrowLeft className="mr-2 h-4 w-4" />
+                  </Button>
+                </Link>
               </CardHeader>
               <CardContent>
                 <RecentReports />
               </CardContent>
             </Card>
           </div>
-        </div>
-
-        {/* How It Works Section */}
-        <section className="mt-16">
-          <div className="text-center arabic-text mb-12">
-            <h3 className="text-3xl font-bold text-gray-900 mb-4">كيف تعمل المنصة؟</h3>
-            <p className="text-lg text-gray-600">خطوات بسيطة للمساهمة في تحسين الطرق</p>
-          </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <Card className="card-hover text-center p-6">
-              <div className="bg-gradient-to-br from-blue-500 to-blue-600 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-                <MapPin className="h-8 w-8 text-white" />
-              </div>
-              <h4 className="text-xl font-semibold mb-2 arabic-text">حدد الموقع</h4>
-              <p className="text-gray-600 arabic-text">استخدم الخريطة أو GPS لتحديد موقع المشكلة بدقة</p>
+          <div className="space-y-6">
+            <Card className="bg-gradient-to-br from-blue-500 to-green-500 text-white">
+              <CardHeader>
+                <CardTitle className="arabic-text">إحصائيات سريعة</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex justify-between items-center">
+                  <span className="arabic-text">البلاغات المكتملة</span>
+                  <span className="font-bold text-xl">127</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="arabic-text">قيد المعالجة</span>
+                  <span className="font-bold text-xl">23</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="arabic-text">المساهمون النشطون</span>
+                  <span className="font-bold text-xl">45</span>
+                </div>
+              </CardContent>
             </Card>
-
-            <Card className="card-hover text-center p-6">
-              <div className="bg-gradient-to-br from-green-500 to-green-600 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Plus className="h-8 w-8 text-white" />
-              </div>
-              <h4 className="text-xl font-semibold mb-2 arabic-text">أرسل البلاغ</h4>
-              <p className="text-gray-600 arabic-text">اكتب وصفاً للمشكلة وأرفق الصور إن أمكن</p>
-            </Card>
-
-            <Card className="card-hover text-center p-6">
-              <div className="bg-gradient-to-br from-purple-500 to-purple-600 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-                <CheckCircle className="h-8 w-8 text-white" />
-              </div>
-              <h4 className="text-xl font-semibold mb-2 arabic-text">تابع التقدم</h4>
-              <p className="text-gray-600 arabic-text">راقب حالة بلاغك من المراجعة إلى الإصلاح</p>
+            
+            <Card>
+              <CardHeader>
+                <CardTitle className="arabic-text">نصائح مفيدة</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ul className="space-y-2 text-sm text-gray-600 arabic-text">
+                  <li>• أضف صوراً واضحة للمشكلة</li>
+                  <li>• حدد الموقع بدقة على الخريطة</li>
+                  <li>• اكتب وصفاً مفصلاً للمشكلة</li>
+                  <li>• تابع حالة بلاغك بانتظام</li>
+                </ul>
+              </CardContent>
             </Card>
           </div>
-        </section>
+        </div>
       </section>
 
       {/* Footer */}
-      <footer className="bg-gray-900 text-white mt-16">
-        <div className="container mx-auto px-4 py-8">
-          <div className="text-center arabic-text">
-            <p className="text-gray-400">
-              © 2024 منصة مدينتي الإبلاغ عن أعطال الطرق. جميع الحقوق محفوظة.
-            </p>
-            <p className="text-gray-500 mt-2">
-              تم تطويرها بواسطة m0usa.ly
+      <footer className="bg-gray-800 text-white py-8 mt-16">
+        <div className="container mx-auto px-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div>
+              <div className="flex items-center space-x-3 rtl:space-x-reverse mb-4">
+                <div className="bg-gradient-to-br from-blue-500 to-green-500 p-2 rounded-xl">
+                  <MapPin className="h-5 w-5 text-white" />
+                </div>
+                <h3 className="text-lg font-bold arabic-text">بلاغات البلدية</h3>
+              </div>
+              <p className="text-gray-400 arabic-text text-sm">
+                منصة لتقديم البلاغات البلدية ومتابعة حالتها
+              </p>
+            </div>
+            
+            <div>
+              <h4 className="font-semibold mb-4 arabic-text">روابط سريعة</h4>
+              <ul className="space-y-2 text-sm">
+                <li><Link to="/report" className="text-gray-400 hover:text-white transition-colors arabic-text">تقديم بلاغ</Link></li>
+                <li><Link to="/admin" className="text-gray-400 hover:text-white transition-colors arabic-text">لوحة التحكم</Link></li>
+                <li><Link to="/leaderboard" className="text-gray-400 hover:text-white transition-colors arabic-text">لوحة الشرف</Link></li>
+                <li><Link to="/developers" className="text-gray-400 hover:text-white transition-colors arabic-text">فريق التطوير</Link></li>
+              </ul>
+            </div>
+            
+            <div>
+              <h4 className="font-semibold mb-4 arabic-text">تواصل معنا</h4>
+              <div className="space-y-2 text-sm text-gray-400">
+                <p className="arabic-text">الهاتف: 920001234</p>
+                <p>البريد: info@municipality.gov.sa</p>
+                <p className="arabic-text">العنوان: الرياض، المملكة العربية السعودية</p>
+              </div>
+            </div>
+          </div>
+          
+          <div className="border-t border-gray-700 mt-8 pt-8 text-center">
+            <p className="text-gray-400 text-sm arabic-text">
+              © 2024 بلاغات البلدية. جميع الحقوق محفوظة.
             </p>
           </div>
         </div>

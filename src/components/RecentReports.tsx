@@ -22,6 +22,18 @@ const RecentReports = () => {
     fetchRecentReports();
   }, []);
 
+  // Helper function to convert Arabic numerals to English
+  const toEnglishNumbers = (str: string) => {
+    const arabicNumbers = ['٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩'];
+    const englishNumbers = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
+    
+    let result = str;
+    for (let i = 0; i < arabicNumbers.length; i++) {
+      result = result.replace(new RegExp(arabicNumbers[i], 'g'), englishNumbers[i]);
+    }
+    return result;
+  };
+
   const fetchRecentReports = async () => {
     try {
       const { data, error } = await supabase
@@ -67,20 +79,21 @@ const RecentReports = () => {
     const diffInMinutes = Math.floor((now.getTime() - date.getTime()) / (1000 * 60));
     
     if (diffInMinutes < 1) return 'الآن';
-    if (diffInMinutes < 60) return `منذ ${diffInMinutes} دقيقة`;
+    if (diffInMinutes < 60) return `منذ ${toEnglishNumbers(diffInMinutes.toString())} دقيقة`;
     
     const diffInHours = Math.floor(diffInMinutes / 60);
-    if (diffInHours < 24) return `منذ ${diffInHours} ساعة`;
+    if (diffInHours < 24) return `منذ ${toEnglishNumbers(diffInHours.toString())} ساعة`;
     
     const diffInDays = Math.floor(diffInHours / 24);
-    if (diffInDays < 7) return `منذ ${diffInDays} يوم`;
+    if (diffInDays < 7) return `منذ ${toEnglishNumbers(diffInDays.toString())} يوم`;
     
-    // For older dates, show the actual Gregorian date
-    return date.toLocaleDateString('ar-SA', {
+    // For older dates, show the actual Gregorian date with English numbers
+    const formattedDate = toEnglishNumbers(date.toLocaleDateString('en-US', {
       month: 'short',
       day: 'numeric',
       calendar: 'gregory'
-    });
+    }));
+    return formattedDate;
   };
 
   if (loading) {
@@ -117,7 +130,7 @@ const RecentReports = () => {
           <div className="flex items-start justify-between mb-2">
             <div className="flex items-center space-x-2 rtl:space-x-reverse flex-1 min-w-0">
               <div className="bg-blue-100 text-blue-800 rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold flex-shrink-0">
-                #{report.id.slice(-3)}
+                #{toEnglishNumbers(report.id.slice(-3))}
               </div>
               <div className="min-w-0 flex-1">
                 <h4 className="font-medium text-gray-900 arabic-text text-sm truncate">

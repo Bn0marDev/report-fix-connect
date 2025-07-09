@@ -1,6 +1,5 @@
-
 import React, { useState, useEffect } from 'react';
-import { BarChart3, ArrowRight, Search, Filter, Eye, Edit, CheckCircle, Clock, AlertTriangle, MapPin, Calendar, Phone, User } from 'lucide-react';
+import { BarChart3, ArrowRight, Search, Filter, Eye, Edit, CheckCircle, Clock, AlertTriangle, MapPin, Calendar, Phone, User, ExternalLink } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -193,10 +192,20 @@ const Admin = () => {
     }
   };
 
+  const toEnglishNumbers = (str: string) => {
+    const arabicNumbers = ['٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩'];
+    const englishNumbers = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
+    
+    let result = str;
+    for (let i = 0; i < arabicNumbers.length; i++) {
+      result = result.replace(new RegExp(arabicNumbers[i], 'g'), englishNumbers[i]);
+    }
+    return result;
+  };
+
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     
-    // Format date in Arabic Gregorian calendar
     const dateOptions: Intl.DateTimeFormatOptions = {
       year: 'numeric',
       month: '2-digit',
@@ -210,10 +219,18 @@ const Admin = () => {
       hour12: true
     };
 
+    const formattedDate = toEnglishNumbers(date.toLocaleDateString('en-US', dateOptions));
+    const formattedTime = toEnglishNumbers(date.toLocaleTimeString('en-US', timeOptions));
+
     return {
-      date: date.toLocaleDateString('ar-SA', dateOptions),
-      time: date.toLocaleTimeString('ar-SA', timeOptions)
+      date: formattedDate,
+      time: formattedTime
     };
+  };
+
+  const openInMaps = (lat: number, lng: number) => {
+    const url = `https://www.google.com/maps?q=${lat},${lng}`;
+    window.open(url, '_blank');
   };
 
   const handleMapReportClick = (report: MapReport) => {
@@ -223,7 +240,6 @@ const Admin = () => {
     }
   };
 
-  // Login screen
   if (!isAuthenticated) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50 flex items-center justify-center p-4">
@@ -306,7 +322,6 @@ const Admin = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50">
-      {/* Header */}
       <header className="bg-white/80 backdrop-blur-sm border-b border-gray-200">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
@@ -339,7 +354,6 @@ const Admin = () => {
       </header>
 
       <div className="container mx-auto px-4 py-6 sm:py-8">
-        {/* Statistics Cards */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6 mb-6 sm:mb-8">
           <Card className="card-hover">
             <CardContent className="pt-4 sm:pt-6">
@@ -390,7 +404,6 @@ const Admin = () => {
           </Card>
         </div>
 
-        {/* Tabs for different views */}
         <Tabs defaultValue="reports" className="space-y-6">
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="reports" className="arabic-text">البلاغات</TabsTrigger>
@@ -398,7 +411,6 @@ const Admin = () => {
           </TabsList>
 
           <TabsContent value="reports" className="space-y-6">
-            {/* Filters and Search */}
             <Card>
               <CardHeader className="pb-4">
                 <CardTitle className="arabic-text">البحث والتصفية</CardTitle>
@@ -442,7 +454,6 @@ const Admin = () => {
               </CardContent>
             </Card>
 
-            {/* Reports Table */}
             <Card>
               <CardHeader className="pb-4">
                 <CardTitle className="arabic-text">جدول البلاغات</CardTitle>
@@ -461,7 +472,7 @@ const Admin = () => {
                           <div className="flex items-start justify-between mb-3 gap-2">
                             <div className="flex items-center space-x-3 rtl:space-x-reverse flex-1 min-w-0">
                               <div className="bg-blue-100 text-blue-800 rounded-full w-8 h-8 flex items-center justify-center text-sm font-bold flex-shrink-0">
-                                #{report.id.slice(-4)}
+                                #{toEnglishNumbers(report.id.slice(-4))}
                               </div>
                               <div className="min-w-0 flex-1">
                                 <h4 className="font-semibold text-gray-900 arabic-text text-sm sm:text-base truncate">{report.type}</h4>
@@ -469,7 +480,7 @@ const Admin = () => {
                                   <User className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
                                   <span className="arabic-text truncate">{report.reporter_name}</span>
                                   <Phone className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
-                                  <span className="truncate">{report.reporter_phone}</span>
+                                  <span className="truncate">{toEnglishNumbers(report.reporter_phone)}</span>
                                 </div>
                               </div>
                             </div>
@@ -502,10 +513,16 @@ const Admin = () => {
                                 <span className="whitespace-nowrap">{date} - {time}</span>
                               </div>
                               {report.location_lat && report.location_lng && (
-                                <div className="flex items-center space-x-1 rtl:space-x-reverse">
-                                  <MapPin className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
-                                  <span>خريطة</span>
-                                </div>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => openInMaps(report.location_lat!, report.location_lng!)}
+                                  className="flex items-center space-x-1 rtl:space-x-reverse text-xs p-1 h-auto text-blue-600 hover:text-blue-800"
+                                >
+                                  <MapPin className="h-3 w-3 flex-shrink-0" />
+                                  <span>عرض في الخرائط</span>
+                                  <ExternalLink className="h-3 w-3 flex-shrink-0" />
+                                </Button>
                               )}
                             </div>
                             
@@ -536,7 +553,7 @@ const Admin = () => {
                                 </DialogTrigger>
                                 <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
                                   <DialogHeader>
-                                    <DialogTitle className="arabic-text">تفاصيل البلاغ #{report.id.slice(-8)}</DialogTitle>
+                                    <DialogTitle className="arabic-text">تفاصيل البلاغ #{toEnglishNumbers(report.id.slice(-8))}</DialogTitle>
                                   </DialogHeader>
                                   <div className="space-y-4">
                                     
@@ -547,7 +564,7 @@ const Admin = () => {
                                       </div>
                                       <div>
                                         <p className="text-sm font-medium text-gray-600 arabic-text">رقم الهاتف</p>
-                                        <p className="text-sm text-gray-900">{report.reporter_phone}</p>
+                                        <p className="text-sm text-gray-900">{toEnglishNumbers(report.reporter_phone)}</p>
                                       </div>
                                     </div>
                                     
@@ -583,10 +600,22 @@ const Admin = () => {
                                     
                                     {report.location_lat && report.location_lng && (
                                       <div>
-                                        <p className="text-sm font-medium text-gray-600 arabic-text">الإحداثيات</p>
-                                        <p className="text-sm text-gray-900">
-                                          خط العرض: {report.location_lat} | خط الطول: {report.location_lng}
-                                        </p>
+                                        <p className="text-sm font-medium text-gray-600 arabic-text mb-2">الموقع</p>
+                                        <div className="flex items-center justify-between">
+                                          <p className="text-sm text-gray-900">
+                                            خط العرض: {toEnglishNumbers(report.location_lat.toString())} | خط الطول: {toEnglishNumbers(report.location_lng.toString())}
+                                          </p>
+                                          <Button
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={() => openInMaps(report.location_lat!, report.location_lng!)}
+                                            className="flex items-center space-x-2 rtl:space-x-reverse"
+                                          >
+                                            <MapPin className="h-4 w-4" />
+                                            <span>عرض في الخرائط</span>
+                                            <ExternalLink className="h-4 w-4" />
+                                          </Button>
+                                        </div>
                                       </div>
                                     )}
                                   </div>
@@ -627,7 +656,6 @@ const Admin = () => {
               </CardContent>
             </Card>
 
-            {/* Selected Report Details */}
             {selectedReport && (
               <Card>
                 <CardHeader className="pb-4">
@@ -649,6 +677,23 @@ const Admin = () => {
                       <p className="text-sm font-medium text-gray-600 arabic-text mb-2">وصف المشكلة</p>
                       <p className="text-sm text-gray-900 arabic-text">{selectedReport.description}</p>
                     </div>
+                    {selectedReport.location_lat && selectedReport.location_lng && (
+                      <div className="sm:col-span-2">
+                        <div className="flex items-center justify-between">
+                          <p className="text-sm font-medium text-gray-600 arabic-text">الموقع الجغرافي</p>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => openInMaps(selectedReport.location_lat!, selectedReport.location_lng!)}
+                            className="flex items-center space-x-2 rtl:space-x-reverse"
+                          >
+                            <MapPin className="h-4 w-4" />
+                            <span>عرض في الخرائط</span>
+                            <ExternalLink className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </CardContent>
               </Card>
