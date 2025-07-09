@@ -195,17 +195,24 @@ const Admin = () => {
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
+    
+    // Format date in Arabic Gregorian calendar
+    const dateOptions: Intl.DateTimeFormatOptions = {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      calendar: 'gregory'
+    };
+    
+    const timeOptions: Intl.DateTimeFormatOptions = {
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: true
+    };
+
     return {
-      date: date.toLocaleDateString('ar-SA', {
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit'
-      }),
-      time: date.toLocaleTimeString('ar-SA', { 
-        hour: '2-digit', 
-        minute: '2-digit',
-        hour12: true
-      })
+      date: date.toLocaleDateString('ar-SA', dateOptions),
+      time: date.toLocaleTimeString('ar-SA', timeOptions)
     };
   };
 

@@ -1,14 +1,17 @@
 
-import React, { useState, useEffect } from 'react';
-import { Clock, MapPin, Eye } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { Calendar, MapPin, Clock, AlertTriangle, User } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
 
 interface Report {
   id: string;
+  reporter_name: string;
   type: string;
-  street_description: string;
   status: string;
   created_at: string;
+  location_lat?: number;
+  location_lng?: number;
 }
 
 const RecentReports = () => {
@@ -23,9 +26,9 @@ const RecentReports = () => {
     try {
       const { data, error } = await supabase
         .from('reports')
-        .select('id, type, street_description, status, created_at')
+        .select('id, reporter_name, type, status, created_at, location_lat, location_lng')
         .order('created_at', { ascending: false })
-        .limit(5);
+        .limit(10);
 
       if (error) {
         console.error('Error fetching recent reports:', error);
@@ -42,9 +45,9 @@ const RecentReports = () => {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'pending': return 'status-pending';
-      case 'in-progress': return 'status-in-progress';
-      case 'completed': return 'status-completed';
+      case 'pending': return 'bg-yellow-100 text-yellow-800';
+      case 'in-progress': return 'bg-blue-100 text-blue-800';
+      case 'completed': return 'bg-green-100 text-green-800';
       default: return 'bg-gray-100 text-gray-800';
     }
   };
@@ -58,79 +61,93 @@ const RecentReports = () => {
     }
   };
 
-  const formatDate = (dateString: string) => {
+  const formatTimeAgo = (dateString: string) => {
     const date = new Date(dateString);
-    return {
-      date: date.toLocaleDateString('ar-SA', {
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit'
-      }),
-      time: date.toLocaleTimeString('ar-SA', { 
-        hour: '2-digit', 
-        minute: '2-digit',
-        hour12: true
-      })
-    };
+    const now = new Date();
+    const diffInMinutes = Math.floor((now.getTime() - date.getTime()) / (1000 * 60));
+    
+    if (diffInMinutes < 1) return 'الآن';
+    if (diffInMinutes < 60) return `منذ ${diffInMinutes} دقيقة`;
+    
+    const diffInHours = Math.floor(diffInMinutes / 60);
+    if (diffInHours < 24) return `منذ ${diffInHours} ساعة`;
+    
+    const diffInDays = Math.floor(diffInHours / 24);
+    if (diffInDays < 7) return `منذ ${diffInDays} يوم`;
+    
+    // For older dates, show the actual Gregorian date
+    return date.toLocaleDateString('ar-SA', {
+      month: 'short',
+      day: 'numeric',
+      calendar: 'gregory'
+    });
   };
 
   if (loading) {
     return (
-      <div className="space-y-4 max-h-[500px] overflow-y-auto">
-        {[...Array(3)].map((_, index) => (
-          <div key={index} className="bg-gray-50 rounded-lg p-3 sm:p-4 animate-pulse">
-            <div className="h-4 bg-gray-200 rounded mb-2"></div>
-            <div className="h-3 bg-gray-200 rounded mb-2"></div>
-            <div className="h-3 bg-gray-200 rounded w-1/2"></div>
+      <div className="space-y-4">
+        {[...Array(5)].map((_, i) => (
+          <div key={i} className="animate-pulse">
+            <div className="flex items-start space-x-3 rtl:space-x-reverse p-3 bg-gray-50 rounded-lg">
+              <div className="w-8 h-8 bg-gray-200 rounded-full flex-shrink-0"></div>
+              <div className="flex-1 space-y-2">
+                <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+                <div className="h-3 bg-gray-200 rounded w-1/2"></div>
+              </div>
+            </div>
           </div>
         ))}
       </div>
     );
   }
 
+  if (reports.length === 0) {
+    return (
+      <div className="text-center py-8">
+        <AlertTriangle className="h-12 w-12 mx-auto text-gray-300 mb-4" />
+        <p className="text-gray-500 arabic-text">لا توجد بلاغات حديثة</p>
+      </div>
+    );
+  }
+
   return (
-    <div className="space-y-3 sm:space-y-4 max-h-[500px] overflow-y-auto">
-      {reports.map((report) => {
-        const { date, time } = formatDate(report.created_at);
-        
-        return (
-          <div 
-            key={report.id} 
-            className="bg-gray-50 rounded-lg p-3 sm:p-4 hover:bg-gray-100 transition-colors cursor-pointer"
-          >
-            <div className="flex items-start justify-between mb-2 gap-2">
-              <h4 className="font-medium text-gray-900 arabic-text text-sm sm:text-base truncate flex-1">{report.type}</h4>
-              <span className={`status-badge text-xs whitespace-nowrap ${getStatusColor(report.status)}`}>
-                {getStatusText(report.status)}
-              </span>
-            </div>
-            
-            <div className="flex items-center text-xs sm:text-sm text-gray-600 mb-2 arabic-text">
-              <MapPin className="h-3 w-3 sm:h-4 sm:w-4 ml-1 flex-shrink-0" />
-              <span className="truncate">{report.street_description || 'لم يتم تحديد الموقع'}</span>
-            </div>
-            
-            <div className="flex items-center justify-between gap-2">
-              <div className="flex items-center text-xs text-gray-500 arabic-text">
-                <Clock className="h-3 w-3 ml-1 flex-shrink-0" />
-                <span className="whitespace-nowrap">{date} - {time}</span>
+    <div className="space-y-3">
+      {reports.map((report) => (
+        <div key={report.id} className="border border-gray-200 rounded-lg p-3 hover:bg-gray-50 transition-colors">
+          <div className="flex items-start justify-between mb-2">
+            <div className="flex items-center space-x-2 rtl:space-x-reverse flex-1 min-w-0">
+              <div className="bg-blue-100 text-blue-800 rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold flex-shrink-0">
+                #{report.id.slice(-3)}
               </div>
-              
-              <button className="flex items-center text-xs text-blue-600 hover:text-blue-800 transition-colors whitespace-nowrap">
-                <Eye className="h-3 w-3 ml-1" />
-                <span>عرض</span>
-              </button>
+              <div className="min-w-0 flex-1">
+                <h4 className="font-medium text-gray-900 arabic-text text-sm truncate">
+                  {report.type}
+                </h4>
+                <div className="flex items-center space-x-1 rtl:space-x-reverse text-xs text-gray-600 mt-1">
+                  <User className="h-3 w-3 flex-shrink-0" />
+                  <span className="arabic-text truncate">{report.reporter_name}</span>
+                </div>
+              </div>
             </div>
+            <Badge className={`${getStatusColor(report.status)} text-xs`}>
+              {getStatusText(report.status)}
+            </Badge>
           </div>
-        );
-      })}
-      
-      {reports.length === 0 && !loading && (
-        <div className="text-center py-6 sm:py-8 text-gray-500 arabic-text">
-          <MapPin className="h-10 w-10 sm:h-12 sm:w-12 mx-auto mb-4 text-gray-300" />
-          <p className="text-sm sm:text-base">لا توجد بلاغات حديثة</p>
+          
+          <div className="flex items-center justify-between text-xs text-gray-500">
+            <div className="flex items-center space-x-1 rtl:space-x-reverse">
+              <Clock className="h-3 w-3 flex-shrink-0" />
+              <span>{formatTimeAgo(report.created_at)}</span>
+            </div>
+            {report.location_lat && report.location_lng && (
+              <div className="flex items-center space-x-1 rtl:space-x-reverse">
+                <MapPin className="h-3 w-3 flex-shrink-0" />
+                <span>موقع محدد</span>
+              </div>
+            )}
+          </div>
         </div>
-      )}
+      ))}
     </div>
   );
 };

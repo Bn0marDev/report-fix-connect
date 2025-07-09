@@ -83,14 +83,42 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
     const mapContainer = mapRef.current;
     mapContainer.innerHTML = '';
 
-    // Create map background with grid pattern
+    // Create realistic map background
     const mapBackground = document.createElement('div');
-    mapBackground.className = 'w-full h-full bg-gradient-to-br from-blue-50 to-green-50 relative overflow-hidden rounded-lg cursor-crosshair';
-    mapBackground.style.backgroundImage = `
-      linear-gradient(rgba(0,0,0,0.05) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(0,0,0,0.05) 1px, transparent 1px)
+    mapBackground.className = 'w-full h-full relative overflow-hidden rounded-lg cursor-crosshair';
+    mapBackground.style.background = `
+      radial-gradient(circle at 30% 40%, #4ade80 0%, #22c55e 25%, #16a34a 50%),
+      radial-gradient(circle at 70% 60%, #06b6d4 0%, #0891b2 25%, #0e7490 50%),
+      linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 25%, #d1d5db 50%, #9ca3af 75%, #6b7280 100%)
     `;
-    mapBackground.style.backgroundSize = '20px 20px';
+    mapBackground.style.backgroundBlendMode = 'multiply, overlay, normal';
+
+    // Add street-like network pattern
+    const streetNetwork = document.createElement('div');
+    streetNetwork.innerHTML = `
+      <svg class="absolute inset-0 w-full h-full opacity-30" viewBox="0 0 400 300">
+        <defs>
+          <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+            <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#374151" stroke-width="0.5" opacity="0.3"/>
+          </pattern>
+        </defs>
+        <rect width="100%" height="100%" fill="url(#grid)" />
+        
+        <!-- Major roads -->
+        <path d="M0,100 Q100,80 200,100 T400,100" stroke="#374151" stroke-width="2" fill="none" opacity="0.6"/>
+        <path d="M0,200 Q100,180 200,200 T400,200" stroke="#374151" stroke-width="2" fill="none" opacity="0.6"/>
+        <path d="M100,0 Q120,100 100,200 T100,300" stroke="#374151" stroke-width="2" fill="none" opacity="0.6"/>
+        <path d="M300,0 Q280,100 300,200 T300,300" stroke="#374151" stroke-width="2" fill="none" opacity="0.6"/>
+        
+        <!-- Neighborhoods -->
+        <circle cx="80" cy="80" r="15" fill="#10b981" opacity="0.2"/>
+        <circle cx="320" cy="80" r="15" fill="#10b981" opacity="0.2"/>
+        <circle cx="80" cy="220" r="15" fill="#10b981" opacity="0.2"/>
+        <circle cx="320" cy="220" r="15" fill="#10b981" opacity="0.2"/>
+        <circle cx="200" cy="150" r="20" fill="#3b82f6" opacity="0.2"/>
+      </svg>
+    `;
+    mapBackground.appendChild(streetNetwork);
 
     // Add click handler for location selection
     if (allowLocationSelect) {
@@ -107,18 +135,6 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
         onLocationSelect(lat, lng);
       });
     }
-
-    // Add street-like lines
-    const streetLines = document.createElement('div');
-    streetLines.innerHTML = `
-      <div class="absolute top-1/4 left-0 w-full h-0.5 bg-gray-300 opacity-60"></div>
-      <div class="absolute top-1/2 left-0 w-full h-0.5 bg-gray-300 opacity-60"></div>
-      <div class="absolute top-3/4 left-0 w-full h-0.5 bg-gray-300 opacity-60"></div>
-      <div class="absolute left-1/4 top-0 h-full w-0.5 bg-gray-300 opacity-60"></div>
-      <div class="absolute left-1/2 top-0 h-full w-0.5 bg-gray-300 opacity-60"></div>
-      <div class="absolute left-3/4 top-0 h-full w-0.5 bg-gray-300 opacity-60"></div>
-    `;
-    mapBackground.appendChild(streetLines);
 
     // Add report markers
     reports.forEach((report, index) => {
