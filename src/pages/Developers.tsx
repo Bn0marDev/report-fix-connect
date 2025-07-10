@@ -38,7 +38,7 @@ const Developers = () => {
     },
     {
       id: 2,
-      name: "محمد عطيه سلامه",
+      name: "محمد عطيه سلامه جاب الله",
       role: "مطور واجهات أمامية",
       specialization: "Vue.js & Design Systems",
       experience: "4+ سنوات",

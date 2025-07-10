@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { MapPin, Plus, Users, BarChart3, Award, ArrowLeft, Code2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -18,7 +17,7 @@ const Index = () => {
                 <MapPin className="h-6 w-6 text-white" />
               </div>
               <div>
-                <h1 className="text-xl font-bold text-gray-900 arabic-text">بلاغات البلدية</h1>
+                <h1 className="text-xl font-bold text-gray-900 arabic-text">مدينتي</h1>
                 <p className="text-sm text-gray-600 arabic-text">نحو مدينة أفضل</p>
               </div>
             </div>
@@ -182,13 +181,13 @@ const Index = () => {
       {/* Footer */}
       <footer className="bg-gray-800 text-white py-8 mt-16">
         <div className="container mx-auto px-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div>
               <div className="flex items-center space-x-3 rtl:space-x-reverse mb-4">
                 <div className="bg-gradient-to-br from-blue-500 to-green-500 p-2 rounded-xl">
                   <MapPin className="h-5 w-5 text-white" />
                 </div>
-                <h3 className="text-lg font-bold arabic-text">بلاغات البلدية</h3>
+                <h3 className="text-lg font-bold arabic-text">مدينتي</h3>
               </div>
               <p className="text-gray-400 arabic-text text-sm">
                 منصة لتقديم البلاغات البلدية ومتابعة حالتها
@@ -204,20 +203,11 @@ const Index = () => {
                 <li><Link to="/developers" className="text-gray-400 hover:text-white transition-colors arabic-text">فريق التطوير</Link></li>
               </ul>
             </div>
-            
-            <div>
-              <h4 className="font-semibold mb-4 arabic-text">تواصل معنا</h4>
-              <div className="space-y-2 text-sm text-gray-400">
-                <p className="arabic-text">الهاتف: 920001234</p>
-                <p>البريد: info@municipality.gov.sa</p>
-                <p className="arabic-text">العنوان: الرياض، المملكة العربية السعودية</p>
-              </div>
-            </div>
           </div>
           
           <div className="border-t border-gray-700 mt-8 pt-8 text-center">
             <p className="text-gray-400 text-sm arabic-text">
-              © 2024 بلاغات البلدية. جميع الحقوق محفوظة.
+              © 2024 مدينتي
             </p>
           </div>
         </div>
